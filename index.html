@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>River Cleaning Boat by HimalixLabs</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <div class="app-viewport">
+
+    <!-- Single Full-Size Card Controller Layout -->
+    <main class="full-controller-card">
+
+      <!-- Card Top Header -->
+      <header class="card-header">
+        <div class="brand-info">
+          <h1>River Cleaning <span>Boat</span></h1>
+          <div class="brand-sub">by HimalixLabs</div>
+        </div>
+
+        <div class="card-header-actions">
+          <a href="/update" target="_blank" class="ota-btn" title="Over-The-Air Firmware Update (/update)">
+            <svg class="ota-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>OTA</span>
+          </a>
+
+          <div class="status-indicator-badge" title="Connection Status">
+            <span class="status-dot" id="status-indicator"></span>
+          </div>
+        </div>
+      </header>
+
+      <div class="card-divider"></div>
+
+      <!-- Section 1: Directional D-Pad Controller with Pure Premium SVG Vector Icons -->
+      <section class="controller-section">
+        <div class="dpad-cross">
+          <!-- Row 1: Top (Forward) -->
+          <div class="dpad-empty"></div>
+          <button class="btn-control" data-dir="FORWARD" title="Forward">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19V5M5 12l7-7 7 7"/>
+            </svg>
+          </button>
+          <div class="dpad-empty"></div>
+
+          <!-- Row 2: Left, Center Stop, Right -->
+          <button class="btn-control" data-dir="LEFT" title="Left">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <button class="btn-control btn-center-stop" data-dir="STOP" title="Stop">
+            <svg class="svg-icon-stop" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="2.5"/>
+            </svg>
+          </button>
+          <button class="btn-control" data-dir="RIGHT" title="Right">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <!-- Row 3: Bottom (Backward) -->
+          <div class="dpad-empty"></div>
+          <button class="btn-control" data-dir="BACKWARD" title="Backward">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14M5 12l7 7 7-7"/>
+            </svg>
+          </button>
+          <div class="dpad-empty"></div>
+        </div>
+      </section>
+
+      <div class="card-divider"></div>
+
+      <!-- Section 2: Cleaner Motor Toggle Button & Status -->
+      <section class="cleaner-section">
+        <div class="cleaner-status-row">
+          <span class="cleaner-label">CLEANER MOTOR</span>
+          <span class="cleaner-state-badge" id="cleaner-state-text">OFF</span>
+        </div>
+
+        <button class="btn-cleaner-main" id="cleaner-toggle-btn">
+          <svg class="btn-power-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+            <line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+          CLEANER ON / OFF
+        </button>
+      </section>
+
+      <div class="card-divider"></div>
+
+      <!-- Section 3: Speed Controller & Presets -->
+      <section class="speed-section">
+        <div class="speed-header-row">
+          <span class="speed-label">SPEED CONTROLLER</span>
+          <span class="speed-readout" id="speed-val-display">78%</span>
+        </div>
+
+        <div class="speed-slider-wrapper">
+          <input type="range" min="0" max="255" value="200" class="speed-slider" id="speed-slider">
+
+          <div class="speed-presets-group">
+            <button class="btn-speed-step" data-speed="64">25%</button>
+            <button class="btn-speed-step" data-speed="128">50%</button>
+            <button class="btn-speed-step active" data-speed="192">75%</button>
+            <button class="btn-speed-step" data-speed="255">100%</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="card-divider"></div>
+
+      <!-- Card Footer: Firmware OTA Link -->
+      <footer class="card-footer-ota">
+        <a href="/update" target="_blank" class="ota-footer-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          FIRMWARE OTA UPDATE ⚡
+        </a>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
