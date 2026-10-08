@@ -70,6 +70,17 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       touch-action: manipulation;
     }
 
+    button, a {
+      touch-action: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
+
+    input[type="range"] {
+      touch-action: pan-x;
+    }
+
     html, body { min-height: 100%; width: 100%; overflow-x: hidden; }
     body {
       min-height: 100vh;
@@ -587,7 +598,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
 
     function setupGlobalAntiSelect() {
-      window.addEventListener('contextmenu', (e) => e.preventDefault());
+      window.addEventListener('contextmenu', (e) => e.preventDefault(), { capture: true });
+      document.addEventListener('selectstart', (e) => {
+        if (e.target.tagName !== 'INPUT') e.preventDefault();
+      });
+      document.addEventListener('dragstart', (e) => e.preventDefault());
+      document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+      document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+      document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
       let lastTouchEnd = 0;
       document.addEventListener('touchend', (e) => {
         const now = Date.now();
@@ -599,6 +618,18 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     function setupHoldToRunButtons() {
       bindMomentary('btn-deploy', 'deploy');
       bindMomentary('btn-retract', 'retract');
+
+      window.addEventListener('mouseup', () => {
+        if (activeHoldDirection) stopHold(activeHoldDirection);
+      });
+      window.addEventListener('touchend', (e) => {
+        if (e.touches && e.touches.length === 0 && activeHoldDirection) {
+          stopHold(activeHoldDirection);
+        }
+      });
+      window.addEventListener('touchcancel', () => {
+        if (activeHoldDirection) stopHold(activeHoldDirection);
+      });
     }
 
     function bindMomentary(id, dir) {
