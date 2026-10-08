@@ -30,179 +30,143 @@
         </div>
 
         <div class="titlebar-actions">
-          <span class="status-pill" id="status-pill">READY</span>
+          <!-- Small SVG OTA Feature Button -->
+          <a href="/update" target="_blank" class="btn-ota" title="OTA Firmware Update (/update)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>OTA</span>
+          </a>
+
+          <!-- Live Status Badge with Pulsing Dot (No Emojis) -->
+          <span class="status-pill" id="status-pill">
+            <span class="status-pulse-dot"></span>
+            <span>READY</span>
+          </span>
+
+          <!-- Theme Toggle with Pure SVG Moon/Sun (No Emojis) -->
           <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
-            <span id="theme-toggle-label">&amp; DARK</span>
+            <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span id="theme-toggle-label">DARK</span>
           </button>
         </div>
       </header>
 
-      <!-- Workbench Interior Content -->
+      <!-- Workbench Content -->
       <div class="workbench-content">
 
-        <!-- Top 3 Mode Selection Cards -->
-        <div class="mode-selector-row">
+        <!-- Tactile Motion Buttons: Hold-To-Run Dead-Man Actuation -->
+        <div class="tactile-actions-grid">
+          <button class="btn-tactile btn-tactile-deploy" id="btn-deploy" title="Hold to Deploy Claws (Release to Stop)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"></line>
+              <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+            <span>DEPLOY CLAWS</span>
+          </button>
 
-          <!-- Option 1: Himalix OTA (Active) -->
-          <div class="mode-card active" id="mode-card-ota" onclick="selectMode('ota')">
-            <div class="mode-icon-box">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                <path d="M4 8h16M4 12h12M4 16h16" />
-              </svg>
-            </div>
-            <div class="mode-card-title">HIMALIX OTA</div>
-            <span class="mode-active-indicator"></span>
-          </div>
-
-          <!-- Option 2: Custom Firmware (.BIN) Flasher -->
-          <div class="mode-card" id="mode-card-firmware" onclick="selectMode('firmware')">
-            <div class="mode-icon-box">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-            </div>
-            <div class="mode-card-title">CUSTOM (.BIN)</div>
-          </div>
-
-          <!-- Option 3: Tactile Claw Actuator -->
-          <div class="mode-card" id="mode-card-tactile" onclick="selectMode('tactile')">
-            <div class="mode-icon-box">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-              </svg>
-            </div>
-            <div class="mode-card-title">TACTILE CLAW</div>
-          </div>
-
+          <button class="btn-tactile btn-tactile-retract" id="btn-retract" title="Hold to Retract Claws (Release to Stop)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+            <span>RETRACT CLAWS</span>
+          </button>
         </div>
 
-        <!-- ========================================================
-             Main Actuation Controls
-             ======================================================== -->
-        <div class="workbench-panel active" id="panel-ota">
+        <!-- Auto Routine & Emergency Stop -->
+        <div class="actions-full-row">
+          <button class="btn-auto-demo" onclick="triggerAutoDemo()">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            <span>AUTO DEMO SEQUENCE</span>
+          </button>
 
-          <!-- Tactile Motion Buttons: Deploy & Retract -->
-          <div class="tactile-actions-grid">
-            <button class="btn-tactile btn-tactile-deploy" onclick="triggerCommand('deploy')" title="Deploy Claws">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <line x1="12" y1="19" x2="12" y2="5"></line>
-                <polyline points="5 12 12 5 19 12"></polyline>
-              </svg>
-              <span>DEPLOY CLAWS</span>
-            </button>
-
-            <button class="btn-tactile btn-tactile-retract" onclick="triggerCommand('retract')" title="Retract Claws">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <polyline points="19 12 12 19 5 12"></polyline>
-              </svg>
-              <span>RETRACT CLAWS</span>
-            </button>
-          </div>
-
-          <!-- Auto Routine & Emergency Stop -->
-          <div class="actions-full-row">
-            <button class="btn-auto-demo" onclick="triggerCommand('demo')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-              <span>AUTO DEMO SEQUENCE</span>
-            </button>
-
-            <button class="btn-emergency-stop" onclick="triggerCommand('stop')" title="Instant Hardware Motor Cutoff">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="5" y="5" width="14" height="14" rx="2" />
-              </svg>
-              <span>EMERGENCY STOP</span>
-            </button>
-          </div>
-
-          <!-- Motor Speed Slider Box & Presets -->
-          <div class="speed-control-box">
-            <div class="speed-box-header">
-              <span class="speed-box-title">MOTOR SPEED PWM (BTS7960)</span>
-              <span class="speed-box-readout" id="speed-val-display">83% (850 PWM)</span>
-            </div>
-
-            <input type="range" min="300" max="1023" value="850" class="custom-range-slider" id="speed-slider"
-              oninput="onSpeedSliderChange(this.value)">
-
-            <div class="speed-presets-row">
-              <button class="btn-speed-preset" onclick="setSpeedPreset(512, this)">50%</button>
-              <button class="btn-speed-preset" onclick="setSpeedPreset(768, this)">75%</button>
-              <button class="btn-speed-preset active" onclick="setSpeedPreset(850, this)">83%</button>
-              <button class="btn-speed-preset" onclick="setSpeedPreset(1023, this)">100%</button>
-            </div>
-          </div>
-
-          <!-- Compact Collapsible Calibration (Network Info Removed) -->
-          <div class="accordion-wrapper">
-            <div class="accordion-item" id="acc-timing">
-              <div class="accordion-header" onclick="toggleAccordion('acc-timing')">
-                <span>⏱ MOTION TIMING &amp; CALIBRATION</span>
-                <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
-              <div class="accordion-body">
-                <div>
-                  <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-bottom:4px; font-family:var(--font-mono);">
-                    <span>Deploy Duration</span>
-                    <span id="deploy-time-label">3.0 s</span>
-                  </div>
-                  <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="deploy-slider"
-                    oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
-                </div>
-
-                <div>
-                  <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-bottom:4px; font-family:var(--font-mono);">
-                    <span>Retract Duration</span>
-                    <span id="retract-time-label">3.0 s</span>
-                  </div>
-                  <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="retract-slider"
-                    oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
-                </div>
-
-                <div>
-                  <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-bottom:4px; font-family:var(--font-mono);">
-                    <span>Demo Hold Duration</span>
-                    <span id="hold-time-label">2.0 s</span>
-                  </div>
-                  <input type="range" min="1000" max="6000" step="100" value="2000" class="custom-range-slider" id="hold-slider"
-                    oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
-                </div>
-
-                <button class="btn-auto-demo" onclick="saveCalibration()" style="width:100%; justify-content:center;">
-                  APPLY CALIBRATION
-                </button>
-              </div>
-            </div>
-          </div>
-
+          <button class="btn-emergency-stop" onclick="triggerEmergencyStop()" title="Instant Hardware Motor Cutoff">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="5" y="5" width="14" height="14" rx="2" />
+            </svg>
+            <span>EMERGENCY STOP</span>
+          </button>
         </div>
 
-        <!-- ========================================================
-             Panel 2: Custom Firmware (.BIN) & Web Flasher (When Selected)
-             ======================================================== -->
-        <div class="workbench-panel" id="panel-firmware">
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; gap:6px;">
-              <button class="btn-auto-demo" onclick="connectWebSerial()" style="flex:1;">
-                ⚡ CONNECT USB
-              </button>
-              <a href="/update" target="_blank" class="btn-auto-demo" style="flex:1; text-decoration:none;">
-                🌐 WEB OTA (/update)
-              </a>
-            </div>
-
-            <!-- Serial Terminal Console -->
-            <div class="serial-terminal" id="serial-terminal">
-              <div class="terminal-line success">[SYSTEM] Himalix Projects controller ready.</div>
-            </div>
+        <!-- Motor Speed Slider Box & Presets -->
+        <div class="speed-control-box">
+          <div class="speed-box-header">
+            <span class="speed-box-title">MOTOR SPEED PWM (BTS7960)</span>
+            <span class="speed-box-readout" id="speed-val-display">83% (850 PWM)</span>
           </div>
+
+          <input type="range" min="300" max="1023" value="850" class="custom-range-slider" id="speed-slider"
+            oninput="onSpeedSliderChange(this.value)">
+
+          <div class="speed-presets-row">
+            <button class="btn-speed-preset" onclick="setSpeedPreset(512, this)">50%</button>
+            <button class="btn-speed-preset" onclick="setSpeedPreset(768, this)">75%</button>
+            <button class="btn-speed-preset active" onclick="setSpeedPreset(850, this)">83%</button>
+            <button class="btn-speed-preset" onclick="setSpeedPreset(1023, this)">100%</button>
+          </div>
+        </div>
+
+        <!-- Permanently Revealed Motion Timing & Calibration (No Hiding / No Arrow) -->
+        <div class="timing-calibration-box">
+          <div class="timing-box-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <polyline points="12 7 12 12 15 15"></polyline>
+            </svg>
+            <span>MOTION TIMING &amp; CALIBRATION</span>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-row-labels">
+              <span>Deploy Duration</span>
+              <span class="timing-val-tag" id="deploy-time-label">3.0 s</span>
+            </div>
+            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="deploy-slider"
+              oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-row-labels">
+              <span>Retract Duration</span>
+              <span class="timing-val-tag" id="retract-time-label">3.0 s</span>
+            </div>
+            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="retract-slider"
+              oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-row-labels">
+              <span>Demo Hold Duration</span>
+              <span class="timing-val-tag" id="hold-time-label">2.0 s</span>
+            </div>
+            <input type="range" min="1000" max="6000" step="100" value="2000" class="custom-range-slider" id="hold-slider"
+              oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+          </div>
+
+          <button class="btn-save-calib" onclick="saveCalibration()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>APPLY CALIBRATION</span>
+          </button>
         </div>
 
       </div>

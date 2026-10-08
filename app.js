@@ -1,33 +1,34 @@
 /**
- * Project CLAW / HAWA Web Flasher — Controller Logic & Web Serial API
+ * Project CLAW / Himalix Projects — Precision Mobile Hardware Controller
+ * Hold-to-Run (Momentary Actuation) & Anti-Zoom/Anti-Select Handling
  */
 
 // Application State
-let currentState = 'IDLE';
 let targetPwm = 850;
 let deployDuration = 3000;
 let retractDuration = 3000;
 let holdDuration = 2000;
-let remainingMs = 0;
-let totalDurationMs = 0;
-let motionTimer = null;
+
+// Claw Travel Position Tracking (0 = Fully Retracted, deployDuration = Fully Deployed)
+let clawTravelMs = 0;
+let momentaryTimer = null;
+let activeHoldDirection = null;
 
 // Serial Communication Variables
 let serialPort = null;
 let serialReader = null;
-let serialWriter = null;
 let isSerialConnected = false;
 
 // DOM Initialization
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  setupEventListeners();
-  appendTerminalLine('System initialized. Ready for USB Web Serial or Wi-Fi AP.', 'info');
+  setupHoldToRunButtons();
+  setupGlobalAntiSelect();
   setInterval(liveSyncStatus, 500);
 });
 
 // ==========================================
-// Theme Management (Light Sand / Dark Terminal)
+// Theme Management (Pure SVG Icons, No Emojis)
 // ==========================================
 function initTheme() {
   const savedTheme = localStorage.getItem('claw_theme') || 'light';
@@ -43,197 +44,224 @@ function toggleTheme() {
 
 function applyTheme(theme) {
   const label = document.getElementById('theme-toggle-label');
-  if (!label) return;
+  const iconMoon = document.getElementById('theme-icon-moon');
+  const iconSun = document.getElementById('theme-icon-sun');
   if (theme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    label.textContent = '☀ LIGHT';
+    if (label) label.textContent = 'LIGHT';
+    if (iconMoon) iconMoon.style.display = 'none';
+    if (iconSun) iconSun.style.display = 'inline-block';
   } else {
     document.documentElement.removeAttribute('data-theme');
-    label.textContent = '& DARK';
+    if (label) label.textContent = 'DARK';
+    if (iconMoon) iconMoon.style.display = 'inline-block';
+    if (iconSun) iconSun.style.display = 'none';
   }
 }
 
 // ==========================================
-// Mode Card Selection
+// Anti-Select / Anti-Zoom / Anti-Copy Setup
 // ==========================================
-function selectMode(modeName) {
-  document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('active'));
-  document.querySelectorAll('.workbench-panel').forEach(panel => panel.classList.remove('active'));
+function setupGlobalAntiSelect() {
+  // Prevent context menu (Copy/Look up popup) globally
+  window.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+  }, { capture: true });
 
-  const targetCard = document.getElementById(`mode-card-${modeName}`);
-  const targetPanel = document.getElementById(`panel-${modeName}`);
+  // Prevent text selection highlights (except sliders)
+  document.addEventListener('selectstart', (e) => {
+    if (e.target.tagName !== 'INPUT') {
+      e.preventDefault();
+    }
+  });
 
-  if (targetCard) targetCard.classList.add('active');
-  if (targetPanel) targetPanel.classList.add('active');
+  // Prevent drag ghosting
+  document.addEventListener('dragstart', (e) => {
+    e.preventDefault();
+  });
 
-  showToast(`Active Mode: ${modeName.toUpperCase()}`);
+  // Prevent mobile pinch and zoom gestures
+  document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+  // Prevent double-tap zoom on quick taps
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
 }
 
-// Window Expand / Fullscreen
-function toggleExpandWindow() {
-  const card = document.getElementById('workbench-card');
-  card.classList.toggle('expanded');
-  const isExp = card.classList.contains('expanded');
-  document.getElementById('expand-btn-text').textContent = isExp ? 'RESTORE' : 'EXPAND WINDOW';
+// ==========================================
+// Momentary Hold-To-Run Motion (Dead-Man Switch)
+// "Press to deploy, release to stop, repress to resume from where you left off"
+// ==========================================
+function setupHoldToRunButtons() {
+  bindMomentaryControl('btn-deploy', 'deploy');
+  bindMomentaryControl('btn-retract', 'retract');
+
+  // Window-level safety fallback: if finger or mouse lifts anywhere outside the button
+  window.addEventListener('mouseup', () => {
+    if (activeHoldDirection) stopMomentaryMotion(activeHoldDirection);
+  });
+  window.addEventListener('touchend', (e) => {
+    // If no touches remain on screen, stop any active hold
+    if (e.touches && e.touches.length === 0 && activeHoldDirection) {
+      stopMomentaryMotion(activeHoldDirection);
+    }
+  });
+  window.addEventListener('touchcancel', () => {
+    if (activeHoldDirection) stopMomentaryMotion(activeHoldDirection);
+  });
 }
 
-// ==========================================
-// Motion Control & Telemetry Simulation
-// ==========================================
-function triggerCommand(cmd) {
-  if (cmd === 'stop') {
-    clearInterval(motionTimer);
-    updateUIState('STOPPED', 0, 0);
-    showToast('EMERGENCY STOPPED');
-    sendSerialOrApi('/api/stop', 'STOP\n');
-    appendTerminalLine('[ACTUATION] Emergency Stop triggered.', 'error');
-    return;
-  }
+function bindMomentaryControl(elementId, direction) {
+  const btn = document.getElementById(elementId);
+  if (!btn) return;
 
-  if (cmd === 'deploy') {
+  const onStart = (e) => {
+    if (e.cancelable) e.preventDefault();
+    startMomentaryMotion(direction);
+  };
+
+  const onEnd = (e) => {
+    if (e.cancelable) e.preventDefault();
+    stopMomentaryMotion(direction);
+  };
+
+  // Touch Events (Mobile)
+  btn.addEventListener('touchstart', onStart, { passive: false });
+  btn.addEventListener('touchend', onEnd, { passive: false });
+  btn.addEventListener('touchcancel', onEnd, { passive: false });
+
+  // Mouse Events (Desktop)
+  btn.addEventListener('mousedown', onStart);
+  btn.addEventListener('mouseup', onEnd);
+  btn.addEventListener('mouseleave', onEnd);
+
+  // Prevent context menu on long-press
+  btn.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  });
+}
+
+function startMomentaryMotion(direction) {
+  if (activeHoldDirection === direction) return;
+  activeHoldDirection = direction;
+
+  const btn = document.getElementById(direction === 'deploy' ? 'btn-deploy' : 'btn-retract');
+  if (btn) btn.classList.add('holding');
+
+  // Trigger hardware motor
+  if (direction === 'deploy') {
     sendSerialOrApi('/api/deploy', 'DEPLOY\n');
-    appendTerminalLine(`[ACTUATION] Deploying Claws (Motor 1 Red Cable, PWM ${targetPwm})`, 'info');
-    startMotionSimulation('DEPLOYING', deployDuration, () => {
-      updateUIState('DEPLOYED', 0, 0);
-      appendTerminalLine('[ACTUATION] Deploy completed.', 'success');
-    });
-    showToast('Deploying Claws (Motor 1)...');
-  } else if (cmd === 'retract') {
-    sendSerialOrApi('/api/retract', 'RETRACT\n');
-    appendTerminalLine(`[ACTUATION] Retracting Claws (Motor 2 Blue Cable, PWM ${targetPwm})`, 'info');
-    startMotionSimulation('RETRACTING', retractDuration, () => {
-      updateUIState('RETRACTED', 0, 0);
-      appendTerminalLine('[ACTUATION] Retract completed.', 'success');
-    });
-    showToast('Retracting Claws (Motor 2)...');
-  } else if (cmd === 'demo') {
-    sendSerialOrApi('/api/demo', 'DEMO\n');
-    appendTerminalLine('[DEMO] Starting Full Demo Sequence...', 'info');
-    showToast('Starting Auto Demo Sequence...');
-    startMotionSimulation('DEMO (DEPLOYING)', deployDuration, () => {
-      updateUIState('DEMO (HOLDING)', 0, 0);
-      appendTerminalLine(`[DEMO] Holding open for ${(holdDuration / 1000).toFixed(1)}s...`, 'info');
-      setTimeout(() => {
-        startMotionSimulation('DEMO (RETRACTING)', retractDuration, () => {
-          updateUIState('IDLE / READY', 0, 0);
-          appendTerminalLine('[DEMO] Sequence completed successfully.', 'success');
-          showToast('Auto Demo Sequence Complete!');
-        });
-      }, holdDuration);
-    });
-  }
-}
-
-function triggerJog(dir) {
-  const jogMs = 500;
-  if (dir === 'deploy') {
-    sendSerialOrApi('/api/deploy', 'JOG_DEPLOY\n');
-    startMotionSimulation('DEPLOYING', jogMs, () => updateUIState('IDLE / READY', 0, 0));
-    appendTerminalLine('[JOG] Motor 1 forward 500ms.', 'info');
-    setTimeout(() => sendSerialOrApi('/api/stop', 'STOP\n'), jogMs);
   } else {
-    sendSerialOrApi('/api/retract', 'JOG_RETRACT\n');
-    startMotionSimulation('RETRACTING', jogMs, () => updateUIState('IDLE / READY', 0, 0));
-    appendTerminalLine('[JOG] Motor 2 forward 500ms.', 'info');
-    setTimeout(() => sendSerialOrApi('/api/stop', 'STOP\n'), jogMs);
+    sendSerialOrApi('/api/retract', 'RETRACT\n');
   }
-  showToast(`Jogging ${dir.toUpperCase()} (0.5s)`);
-}
 
-function startMotionSimulation(stateName, duration, onComplete) {
-  clearInterval(motionTimer);
-  currentState = stateName;
-  totalDurationMs = duration;
-  remainingMs = duration;
-
-  const isM1 = stateName.includes('DEPLOY');
-  const isM2 = stateName.includes('RETRACT');
-  updateUIState(stateName, isM1 ? targetPwm : 0, isM2 ? targetPwm : 0);
-
+  clearInterval(momentaryTimer);
   const stepMs = 50;
-  motionTimer = setInterval(() => {
-    remainingMs -= stepMs;
-    const pBar = document.getElementById('progress-bar');
-    if (remainingMs <= 0) {
-      clearInterval(motionTimer);
-      if (pBar) pBar.style.width = '0%';
-      if (onComplete) onComplete();
+
+  momentaryTimer = setInterval(() => {
+    if (direction === 'deploy') {
+      clawTravelMs = Math.min(deployDuration, clawTravelMs + stepMs);
+      const pct = Math.round((clawTravelMs / deployDuration) * 100);
+      updateStatusDisplay(`DEPLOYING ${pct}%`, 'var(--pixel-red)', 'rgba(225, 29, 72, 0.15)');
+
+      // Reached mechanical limit
+      if (clawTravelMs >= deployDuration) {
+        stopMomentaryMotion('deploy');
+        updateStatusDisplay('DEPLOYED 100%', 'var(--pixel-red)', 'rgba(225, 29, 72, 0.2)');
+        showToast('DEPLOYED (100%)');
+      }
     } else {
-      if (pBar) {
-        const pct = ((totalDurationMs - remainingMs) / totalDurationMs) * 100;
-        pBar.style.width = `${pct}%`;
+      clawTravelMs = Math.max(0, clawTravelMs - stepMs);
+      const pct = Math.round((clawTravelMs / deployDuration) * 100);
+      updateStatusDisplay(`RETRACTING ${pct}%`, 'var(--pixel-blue)', 'rgba(37, 99, 235, 0.15)');
+
+      // Reached mechanical limit
+      if (clawTravelMs <= 0) {
+        stopMomentaryMotion('retract');
+        updateStatusDisplay('RETRACTED 0%', 'var(--pixel-blue)', 'rgba(37, 99, 235, 0.2)');
+        showToast('RETRACTED (0%)');
       }
     }
   }, stepMs);
 }
 
-function updateUIState(stateName, m1, m2) {
+function stopMomentaryMotion(direction) {
+  if (activeHoldDirection !== direction) return;
+  clearInterval(momentaryTimer);
+  activeHoldDirection = null;
+
+  const btn = document.getElementById(direction === 'deploy' ? 'btn-deploy' : 'btn-retract');
+  if (btn) btn.classList.remove('holding');
+
+  // Immediately stop motors on hardware
+  sendSerialOrApi('/api/stop', 'STOP\n');
+
+  // Calculate paused position percentage
+  const pct = Math.round((clawTravelMs / deployDuration) * 100);
+  updateStatusDisplay(`PAUSED (${pct}%)`, 'var(--pixel-green)', 'rgba(16, 185, 129, 0.12)');
+}
+
+function triggerEmergencyStop() {
+  clearInterval(momentaryTimer);
+  activeHoldDirection = null;
+
+  document.querySelectorAll('.btn-tactile').forEach(b => b.classList.remove('holding'));
+  sendSerialOrApi('/api/stop', 'STOP\n');
+  updateStatusDisplay('STOPPED', 'var(--pixel-red)', 'rgba(225, 29, 72, 0.25)');
+  showToast('EMERGENCY STOP');
+}
+
+function triggerAutoDemo() {
+  clearInterval(momentaryTimer);
+  activeHoldDirection = null;
+  sendSerialOrApi('/api/demo', 'DEMO\n');
+  showToast('AUTO DEMO RUNNING');
+  updateStatusDisplay('DEMO RUNNING', 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.15)');
+
+  // Simulate demo cycle
+  const stepMs = 50;
+  const demoInterval = setInterval(() => {
+    clawTravelMs = Math.min(deployDuration, clawTravelMs + stepMs * 2);
+    const pct = Math.round((clawTravelMs / deployDuration) * 100);
+    updateStatusDisplay(`DEMO DEPLOY ${pct}%`, 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.15)');
+
+    if (clawTravelMs >= deployDuration) {
+      clearInterval(demoInterval);
+      updateStatusDisplay('DEMO HOLDING', 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.2)');
+      setTimeout(() => {
+        const retractInterval = setInterval(() => {
+          clawTravelMs = Math.max(0, clawTravelMs - stepMs * 2);
+          const rPct = Math.round((clawTravelMs / deployDuration) * 100);
+          updateStatusDisplay(`DEMO RETRACT ${rPct}%`, 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.15)');
+
+          if (clawTravelMs <= 0) {
+            clearInterval(retractInterval);
+            updateStatusDisplay('READY (0%)', 'var(--pixel-green)', 'rgba(16, 185, 129, 0.12)');
+            showToast('DEMO COMPLETE');
+          }
+        }, stepMs);
+      }, holdDuration);
+    }
+  }, stepMs);
+}
+
+function updateStatusDisplay(text, color, bg) {
   const pill = document.getElementById('status-pill');
-  if (pill) {
-    pill.textContent = stateName;
-    if (stateName.includes('DEPLOY')) {
-      pill.style.color = 'var(--pixel-red)';
-      pill.style.borderColor = 'rgba(225, 29, 72, 0.4)';
-      pill.style.background = 'rgba(225, 29, 72, 0.12)';
-    } else if (stateName.includes('RETRACT')) {
-      pill.style.color = 'var(--pixel-blue)';
-      pill.style.borderColor = 'rgba(37, 99, 235, 0.4)';
-      pill.style.background = 'rgba(37, 99, 235, 0.12)';
-    } else if (stateName.includes('STOP')) {
-      pill.style.color = 'var(--pixel-red)';
-      pill.style.borderColor = 'var(--pixel-red)';
-      pill.style.background = 'rgba(225, 29, 72, 0.2)';
-    } else {
-      pill.style.color = 'var(--pixel-green)';
-      pill.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-      pill.style.background = 'rgba(16, 185, 129, 0.12)';
-    }
-  }
-
-  const badge = document.getElementById('state-badge');
-  const text = document.getElementById('state-text');
-  if (text) text.textContent = stateName;
-
-  if (badge) {
-    if (stateName.includes('DEPLOY')) {
-      badge.style.color = 'var(--pixel-red)';
-      badge.style.borderColor = 'var(--pixel-red)';
-      badge.style.background = 'rgba(225, 29, 72, 0.1)';
-    } else if (stateName.includes('RETRACT')) {
-      badge.style.color = 'var(--pixel-blue)';
-      badge.style.borderColor = 'var(--pixel-blue)';
-      badge.style.background = 'rgba(37, 99, 235, 0.1)';
-    } else if (stateName.includes('STOP')) {
-      badge.style.color = 'var(--pixel-red)';
-      badge.style.borderColor = 'var(--pixel-red)';
-      badge.style.background = 'rgba(225, 29, 72, 0.15)';
-    } else {
-      badge.style.color = 'var(--pixel-green)';
-      badge.style.borderColor = 'var(--pixel-green)';
-      badge.style.background = 'rgba(16, 185, 129, 0.1)';
-    }
-  }
-
-  // Optional Motor Readouts (null-checked)
-  const m1State = document.getElementById('m1-badge-state');
-  const m1Val = document.getElementById('m1-val');
-  if (m1State) {
-    m1State.textContent = m1 > 0 ? 'ACTIVE' : 'OFF';
-    m1State.style.color = m1 > 0 ? 'var(--pixel-red)' : 'var(--text-dim)';
-  }
-  if (m1Val) {
-    m1Val.textContent = m1 > 0 ? `${Math.round((m1 / 1023) * 100)}% (${m1} PWM)` : '0% (0 PWM)';
-  }
-
-  const m2State = document.getElementById('m2-badge-state');
-  const m2Val = document.getElementById('m2-val');
-  if (m2State) {
-    m2State.textContent = m2 > 0 ? 'ACTIVE' : 'OFF';
-    m2State.style.color = m2 > 0 ? 'var(--pixel-blue)' : 'var(--text-dim)';
-  }
-  if (m2Val) {
-    m2Val.textContent = m2 > 0 ? `${Math.round((m2 / 1023) * 100)}% (${m2} PWM)` : '0% (0 PWM)';
-  }
+  if (!pill) return;
+  const label = pill.querySelector('span:last-child') || pill;
+  label.textContent = text;
+  if (color) pill.style.color = color;
+  if (bg) pill.style.background = bg;
 }
 
 // ==========================================
@@ -243,7 +271,6 @@ function onSpeedSliderChange(val) {
   targetPwm = parseInt(val);
   const pct = Math.round((targetPwm / 1023) * 100);
   document.getElementById('speed-val-display').textContent = `${pct}% (${targetPwm} PWM)`;
-
   document.querySelectorAll('.btn-speed-preset').forEach(btn => btn.classList.remove('active'));
 }
 
@@ -252,12 +279,7 @@ function setSpeedPreset(val, btnElement) {
   onSpeedSliderChange(val);
   document.querySelectorAll('.btn-speed-preset').forEach(btn => btn.classList.remove('active'));
   if (btnElement) btnElement.classList.add('active');
-
   sendSerialOrApi(`/api/config?pwm=${val}`, `SET_PWM=${val}\n`);
-}
-
-function toggleAccordion(id) {
-  document.getElementById(id).classList.toggle('open');
 }
 
 function saveCalibration() {
@@ -269,103 +291,31 @@ function saveCalibration() {
     `/api/config?pwm=${targetPwm}&deploy=${deployDuration}&retract=${retractDuration}&hold=${holdDuration}`,
     `CALIB:${targetPwm},${deployDuration},${retractDuration},${holdDuration}\n`
   );
-  showToast('Calibration Applied Successfully!');
-  appendTerminalLine(`[CONFIG] Applied Calibration: Deploy=${deployDuration}ms, Retract=${retractDuration}ms, Hold=${holdDuration}ms`, 'success');
+  showToast('CALIBRATION APPLIED');
 }
 
 // ==========================================
-// Web Serial API Connection
+// Web Serial API & Hardware Communication
 // ==========================================
-async function connectWebSerial() {
-  if (!('serial' in navigator)) {
-    alert('Web Serial API is not supported in this browser. Please use Chrome, Edge, or Opera.');
-    return;
-  }
-
-  try {
-    const baudRate = parseInt(document.getElementById('baud-rate-select')?.value || 115200);
-    appendTerminalLine('Requesting Web Serial port...', 'info');
-
-    serialPort = await navigator.serial.requestPort();
-    await serialPort.open({ baudRate: baudRate });
-
-    isSerialConnected = true;
-    updateConnectionStatusUI(true, 'USB SERIAL CONNECTED');
-    appendTerminalLine(`Connected to USB Serial at ${baudRate} baud.`, 'success');
-    showToast('USB Web Serial Connected!');
-
-    readSerialStream();
-  } catch (err) {
-    appendTerminalLine(`Serial connection failed: ${err.message}`, 'error');
-  }
-}
-
-async function readSerialStream() {
-  const decoder = new TextDecoderStream();
-  serialPort.readable.pipeTo(decoder.writable);
-  serialReader = decoder.readable.getReader();
-
-  try {
-    while (true) {
-      const { value, done } = await serialReader.read();
-      if (done) break;
-      if (value) {
-        appendTerminalLine(value.trim(), 'info');
-      }
-    }
-  } catch (err) {
-    appendTerminalLine(`Serial read error: ${err.message}`, 'error');
-  }
-}
-
-async function writeSerial(text) {
-  if (!serialPort || !serialPort.writable) return;
-  const encoder = new TextEncoder();
-  const writer = serialPort.writable.getWriter();
-  await writer.write(encoder.encode(text));
-  writer.releaseLock();
-}
-
 function sendSerialOrApi(apiEndpoint, serialCmd) {
-  if (isSerialConnected && serialCmd) {
-    writeSerial(serialCmd).catch(() => {});
+  if (isSerialConnected && serialCmd && serialPort && serialPort.writable) {
+    const encoder = new TextEncoder();
+    const writer = serialPort.writable.getWriter();
+    writer.write(encoder.encode(serialCmd)).finally(() => writer.releaseLock());
   }
   fetch(apiEndpoint, { method: 'POST' }).catch(() => {});
 }
 
-function updateConnectionStatusUI(connected, label) {
-  const dot = document.getElementById('device-connect-btn');
-  if (dot) {
-    dot.textContent = connected ? `✓ ${label}` : 'CONNECT DEVICE';
-  }
-}
-
-// ==========================================
-// Live Telemetry Sync with ESP8266
-// ==========================================
+// Live Status Polling
 async function liveSyncStatus() {
   try {
     const res = await fetch('/api/status');
     if (!res.ok) return;
     const data = await res.json();
-    updateUIState(data.state, data.m1_pwm, data.m2_pwm);
-  } catch (err) {
-    // In standalone preview mode, local simulation runs
-  }
-}
-
-// ==========================================
-// Helpers
-// ==========================================
-function appendTerminalLine(text, type = 'info') {
-  const term = document.getElementById('serial-terminal');
-  if (!term) return;
-  const line = document.createElement('div');
-  line.className = `terminal-line ${type}`;
-  const time = new Date().toLocaleTimeString();
-  line.textContent = `[${time}] ${text}`;
-  term.appendChild(line);
-  term.scrollTop = term.scrollHeight;
+    if (!activeHoldDirection) {
+      updateStatusDisplay(data.state);
+    }
+  } catch (err) {}
 }
 
 function showToast(msg) {
@@ -373,22 +323,5 @@ function showToast(msg) {
   if (!toast) return;
   toast.textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2200);
-}
-
-function setupEventListeners() {
-  // Drag & drop firmware file
-  const dropzone = document.getElementById('firmware-dropzone');
-  const fileInput = document.getElementById('firmware-file-input');
-
-  if (dropzone && fileInput) {
-    dropzone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        const file = e.target.files[0];
-        appendTerminalLine(`Loaded firmware binary: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, 'success');
-        showToast(`Loaded ${file.name}`);
-      }
-    });
-  }
+  setTimeout(() => toast.classList.remove('show'), 1800);
 }

@@ -36,7 +36,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --radius-sm: 4px;
       --radius-md: 8px;
-      --radius-lg: 12px;
+      --radius-lg: 14px;
     }
 
     [data-theme="dark"] {
@@ -55,9 +55,25 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       --btn-black-text: #090d14;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; }
-    html, body { min-height: 100vh; width: 100%; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      -khtml-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      touch-action: manipulation;
+    }
+
+    html, body { min-height: 100%; width: 100%; overflow-x: hidden; }
     body {
+      min-height: 100vh;
+      min-height: 100dvh;
       background-color: var(--canvas-bg);
       background-image: radial-gradient(circle, var(--grid-dot) 1.2px, transparent 1.2px);
       background-size: var(--grid-dot-size) var(--grid-dot-size);
@@ -66,18 +82,25 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       line-height: 1.4;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      padding: 12px 10px 32px;
-      overflow-x: hidden;
+      align-items: center;
+      padding: max(10px, env(safe-area-inset-top, 10px)) max(10px, env(safe-area-inset-right, 10px)) max(12px, env(safe-area-inset-bottom, 12px)) max(10px, env(safe-area-inset-left, 10px));
       transition: background-color 0.2s ease;
     }
 
-    .mobile-app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; margin: 0 auto; }
+    .mobile-app-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      margin: auto 0;
+    }
+
     .workbench-card {
+      width: 100%;
       background: var(--surface-card);
       border: 1px solid var(--border-main);
       border-radius: var(--radius-lg);
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -87,10 +110,11 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 14px;
+      padding: 11px 14px;
       background: var(--surface-header);
       border-bottom: 1px solid var(--border-main);
     }
+
     .titlebar-left { display: flex; align-items: center; gap: 10px; }
     .window-dots { display: flex; align-items: center; gap: 4px; }
     .window-square-dot { width: 7px; height: 7px; border-radius: 1px; }
@@ -98,94 +122,120 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     .dot-amber { background: #f59e0b; }
     .dot-green { background: #10b981; }
 
-    .window-title { font-family: var(--font-dot); font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-sub); }
-    .titlebar-actions { display: flex; align-items: center; gap: 8px; }
-    .status-pill {
+    .window-title {
+      font-family: var(--font-dot);
+      font-size: 13px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--text-main);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .titlebar-actions { display: flex; align-items: center; gap: 6px; }
+
+    .btn-ota {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-main);
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
       font-family: var(--font-mono);
       font-size: 10px;
       font-weight: 700;
-      padding: 2px 7px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn-ota svg { width: 12px; height: 12px; stroke: currentColor; }
+
+    .status-pill {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 4px 7px;
       border-radius: 2px;
       background: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(16, 185, 129, 0.4);
       color: var(--pixel-green);
       text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
+    .status-pulse-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--pixel-green); }
 
     .btn-theme-toggle {
       background: transparent;
       border: 1px solid var(--border-main);
-      padding: 3px 8px;
+      padding: 4px 8px;
       border-radius: var(--radius-sm);
       font-family: var(--font-mono);
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 700;
       color: var(--text-sub);
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
+    .btn-theme-toggle svg { width: 12px; height: 12px; stroke: currentColor; }
 
-    .workbench-content { padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
-
-    .mode-selector-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .mode-card {
+    .workbench-content {
+      padding: 12px 14px 14px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 8px 6px;
-      background: var(--surface-card);
-      border: 1px solid var(--border-main);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      position: relative;
+      gap: 11px;
     }
-    .mode-card.active { background: var(--surface-elevated); border: 2px solid var(--border-dark); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); }
-    .mode-icon-box {
-      width: 28px;
-      height: 28px;
-      background: rgba(0, 0, 0, 0.06);
-      border: 1px solid var(--border-main);
-      border-radius: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 4px;
-      color: var(--text-main);
-    }
-    .mode-card.active .mode-icon-box { background: var(--btn-black-bg); border-color: var(--btn-black-bg); color: var(--btn-black-text); }
-    .mode-card-title { font-family: var(--font-dot); font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-main); line-height: 1.1; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mode-active-indicator { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; background: var(--pixel-red); }
 
-    .tactile-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tactile-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
     .btn-tactile {
       background: var(--surface-elevated);
       border: 1px solid var(--border-main);
-      border-radius: var(--radius-sm);
-      padding: 16px 8px;
+      border-radius: var(--radius-md);
+      padding: 16px 10px;
       color: var(--text-main);
       font-family: var(--font-mono);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       cursor: pointer;
-      min-height: 68px;
+      min-height: 86px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      transition: transform 0.08s ease, background 0.08s ease;
+      position: relative;
     }
-    .btn-tactile:active { transform: scale(0.97); }
-    .btn-tactile-deploy { border-left: 4px solid var(--pixel-red); }
-    .btn-tactile-retract { border-left: 4px solid var(--pixel-blue); }
-    .btn-tactile svg { width: 22px; height: 22px; stroke: currentColor; }
+    .btn-tactile svg { width: 24px; height: 24px; stroke: currentColor; }
+    .btn-tactile-deploy { border-left: 5px solid var(--pixel-red); }
+    .btn-tactile-retract { border-left: 5px solid var(--pixel-blue); }
 
-    .actions-full-row { display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; }
+    .btn-tactile:active, .btn-tactile.holding { transform: scale(0.96); }
+    .btn-tactile-deploy:active, .btn-tactile-deploy.holding { background: rgba(225, 29, 72, 0.09); border-color: var(--pixel-red); }
+    .btn-tactile-retract:active, .btn-tactile-retract.holding { background: rgba(37, 99, 235, 0.09); border-color: var(--pixel-blue); }
+
+    .actions-full-row {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 10px;
+    }
+
     .btn-auto-demo {
       background: var(--surface-elevated);
       border: 1px solid var(--border-dark);
       border-radius: var(--radius-sm);
-      padding: 12px 8px;
+      padding: 12px 10px;
       color: var(--text-main);
       font-family: var(--font-mono);
       font-size: 11px;
@@ -199,13 +249,14 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       cursor: pointer;
       min-height: 48px;
     }
+    .btn-auto-demo svg { width: 14px; height: 14px; }
     .btn-auto-demo:active { transform: scale(0.97); }
 
     .btn-emergency-stop {
       background: var(--pixel-red);
       border: 1px solid var(--pixel-red);
       border-radius: var(--radius-sm);
-      padding: 12px 8px;
+      padding: 12px 10px;
       color: #ffffff;
       font-family: var(--font-mono);
       font-size: 12px;
@@ -218,22 +269,25 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       gap: 6px;
       cursor: pointer;
       min-height: 48px;
-      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);
+      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.28);
     }
+    .btn-emergency-stop svg { width: 14px; height: 14px; }
     .btn-emergency-stop:active { transform: scale(0.96); opacity: 0.9; }
 
     .speed-control-box {
       background: var(--surface-elevated);
       border: 1px solid var(--border-main);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      padding: 11px 14px 13px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 9px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
     }
+
     .speed-box-header { display: flex; justify-content: space-between; align-items: center; }
     .speed-box-title { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-sub); }
-    .speed-box-readout { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text-main); }
+    .speed-box-readout { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; color: var(--text-main); }
 
     .custom-range-slider {
       -webkit-appearance: none;
@@ -252,6 +306,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       border: 1px solid var(--border-dark);
       border-radius: 3px;
       cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
     }
 
     .speed-presets-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -259,7 +314,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       background: var(--surface-card);
       border: 1px solid var(--border-main);
       border-radius: var(--radius-sm);
-      padding: 8px 4px;
+      padding: 7px 4px;
       font-family: var(--font-mono);
       font-size: 10.5px;
       font-weight: 700;
@@ -271,6 +326,55 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       justify-content: center;
     }
     .btn-speed-preset.active { background: var(--btn-black-bg); color: var(--btn-black-text); border-color: var(--btn-black-bg); }
+
+    .timing-calibration-box {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 11px 14px 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .timing-box-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+    .timing-box-header svg { width: 13px; height: 13px; stroke: currentColor; }
+
+    .timing-row { display: flex; flex-direction: column; gap: 3px; }
+    .timing-row-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--text-sub); }
+    .timing-val-tag { font-weight: 700; color: var(--text-main); }
+
+    .btn-save-calib {
+      background: var(--surface-card);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-sm);
+      padding: 9px;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      margin-top: 2px;
+    }
+    .btn-save-calib svg { width: 13px; height: 13px; stroke: currentColor; }
+    .btn-save-calib:active { background: var(--btn-black-bg); color: var(--btn-black-text); transform: scale(0.97); }
 
     .toast-notice {
       position: fixed;
@@ -308,59 +412,50 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <span class="window-title">HIMALIX PROJECTS</span>
         </div>
         <div class="titlebar-actions">
-          <span class="status-pill" id="status-pill">READY</span>
-          <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">
-            <span id="theme-toggle-label">&amp; DARK</span>
+          <a href="/update" target="_blank" class="btn-ota" title="OTA Firmware Update (/update)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>OTA</span>
+          </a>
+          <span class="status-pill" id="status-pill">
+            <span class="status-pulse-dot"></span>
+            <span>READY</span>
+          </span>
+          <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
+            <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span id="theme-toggle-label">DARK</span>
           </button>
         </div>
       </header>
 
       <div class="workbench-content">
-        <!-- 3 Mode Cards -->
-        <div class="mode-selector-row">
-          <div class="mode-card active" id="mode-card-ota" onclick="showToast('Himalix Projects OTA')">
-            <div class="mode-icon-box">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M4 8h16M4 12h12M4 16h16" />
-              </svg>
-            </div>
-            <div class="mode-card-title">HIMALIX OTA</div>
-            <span class="mode-active-indicator"></span>
-          </div>
-
-          <div class="mode-card" id="mode-card-firmware" onclick="window.open('/update','_blank')">
-            <div class="mode-icon-box">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-            </div>
-            <div class="mode-card-title">CUSTOM (.BIN)</div>
-          </div>
-
-          <div class="mode-card" id="mode-card-tactile" onclick="showToast('Tactile Claw Actuator')">
-            <div class="mode-icon-box">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-              </svg>
-            </div>
-            <div class="mode-card-title">TACTILE CLAW</div>
-          </div>
-        </div>
-
-        <!-- Primary Actuation Controls (No Motor 1 / Motor 2 labels) -->
+        <!-- Hold-to-Run Tactile Buttons -->
         <div class="tactile-actions-grid">
-          <button class="btn-tactile btn-tactile-deploy" onclick="triggerCommand('deploy')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <button class="btn-tactile btn-tactile-deploy" id="btn-deploy" title="Hold to Deploy Claws (Release to Stop)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="19" x2="12" y2="5"></line>
               <polyline points="5 12 12 5 19 12"></polyline>
             </svg>
             <span>DEPLOY CLAWS</span>
           </button>
-          <button class="btn-tactile btn-tactile-retract" onclick="triggerCommand('retract')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <button class="btn-tactile btn-tactile-retract" id="btn-retract" title="Hold to Retract Claws (Release to Stop)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <polyline points="19 12 12 19 5 12"></polyline>
             </svg>
@@ -370,8 +465,18 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         <!-- Auto Demo & Emergency Stop -->
         <div class="actions-full-row">
-          <button class="btn-auto-demo" onclick="triggerCommand('demo')">AUTO DEMO SEQUENCE</button>
-          <button class="btn-emergency-stop" onclick="triggerCommand('stop')">EMERGENCY STOP</button>
+          <button class="btn-auto-demo" onclick="triggerAutoDemo()">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            <span>AUTO DEMO SEQUENCE</span>
+          </button>
+          <button class="btn-emergency-stop" onclick="triggerEmergencyStop()" title="Instant Hardware Motor Cutoff">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="5" y="5" width="14" height="14" rx="2" />
+            </svg>
+            <span>EMERGENCY STOP</span>
+          </button>
         </div>
 
         <!-- Motor Speed PWM Slider -->
@@ -389,6 +494,46 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           </div>
         </div>
 
+        <!-- Permanently Revealed Timing Calibration -->
+        <div class="timing-calibration-box">
+          <div class="timing-box-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <polyline points="12 7 12 12 15 15"></polyline>
+            </svg>
+            <span>MOTION TIMING &amp; CALIBRATION</span>
+          </div>
+          <div class="timing-row">
+            <div class="timing-row-labels">
+              <span>Deploy Duration</span>
+              <span class="timing-val-tag" id="deploy-time-label">3.0 s</span>
+            </div>
+            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="deploy-slider"
+              oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+          </div>
+          <div class="timing-row">
+            <div class="timing-row-labels">
+              <span>Retract Duration</span>
+              <span class="timing-val-tag" id="retract-time-label">3.0 s</span>
+            </div>
+            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="retract-slider"
+              oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+          </div>
+          <div class="timing-row">
+            <div class="timing-row-labels">
+              <span>Demo Hold Duration</span>
+              <span class="timing-val-tag" id="hold-time-label">2.0 s</span>
+            </div>
+            <input type="range" min="1000" max="6000" step="100" value="2000" class="custom-range-slider" id="hold-slider"
+              oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+          </div>
+          <button class="btn-save-calib" onclick="saveCalibration()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>APPLY CALIBRATION</span>
+          </button>
+        </div>
       </div>
     </main>
   </div>
@@ -397,36 +542,156 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
   <script>
     let targetPwm = 850;
+    let deployDuration = 3000;
+    let retractDuration = 3000;
+    let holdDuration = 2000;
+
+    let clawTravelMs = 0;
+    let momentaryTimer = null;
+    let activeHoldDirection = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      setupHoldToRunButtons();
+      setupGlobalAntiSelect();
+      setInterval(liveSyncStatus, 500);
+    });
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('claw_theme') || 'light';
+      applyTheme(savedTheme);
+    }
 
     function toggleTheme() {
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      if (isDark) {
-        document.documentElement.removeAttribute('data-theme');
-        document.getElementById('theme-toggle-label').textContent = '& DARK';
-      } else {
+      const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+      localStorage.setItem('claw_theme', newTheme);
+    }
+
+    function applyTheme(theme) {
+      const label = document.getElementById('theme-toggle-label');
+      const iconMoon = document.getElementById('theme-icon-moon');
+      const iconSun = document.getElementById('theme-icon-sun');
+      if (theme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
-        document.getElementById('theme-toggle-label').textContent = '☀ LIGHT';
+        if (label) label.textContent = 'LIGHT';
+        if (iconMoon) iconMoon.style.display = 'none';
+        if (iconSun) iconSun.style.display = 'inline-block';
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        if (label) label.textContent = 'DARK';
+        if (iconMoon) iconMoon.style.display = 'inline-block';
+        if (iconSun) iconSun.style.display = 'none';
       }
     }
 
-    function showToast(msg) {
-      const toast = document.getElementById('toast-notice');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 1800);
+    function setupGlobalAntiSelect() {
+      window.addEventListener('contextmenu', (e) => e.preventDefault());
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) e.preventDefault();
+        lastTouchEnd = now;
+      }, { passive: false });
     }
 
-    function triggerCommand(cmd) {
-      fetch('/api/' + cmd, { method: 'POST' }).catch(() => {});
-      showToast(cmd.toUpperCase());
-      const pill = document.getElementById('status-pill');
-      if (pill) {
-        pill.textContent = cmd.toUpperCase();
-        if (cmd === 'stop') {
-          pill.style.color = 'var(--pixel-red)';
-          pill.style.background = 'rgba(225, 29, 72, 0.2)';
+    function setupHoldToRunButtons() {
+      bindMomentary('btn-deploy', 'deploy');
+      bindMomentary('btn-retract', 'retract');
+    }
+
+    function bindMomentary(id, dir) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+
+      const onStart = (e) => {
+        if (e.cancelable) e.preventDefault();
+        startHold(dir);
+      };
+      const onEnd = (e) => {
+        if (e.cancelable) e.preventDefault();
+        stopHold(dir);
+      };
+
+      btn.addEventListener('touchstart', onStart, { passive: false });
+      btn.addEventListener('touchend', onEnd, { passive: false });
+      btn.addEventListener('touchcancel', onEnd, { passive: false });
+      btn.addEventListener('mousedown', onStart);
+      btn.addEventListener('mouseup', onEnd);
+      btn.addEventListener('mouseleave', onEnd);
+      btn.addEventListener('contextmenu', (e) => { e.preventDefault(); return false; });
+    }
+
+    function startHold(dir) {
+      if (activeHoldDirection === dir) return;
+      activeHoldDirection = dir;
+
+      const btn = document.getElementById(dir === 'deploy' ? 'btn-deploy' : 'btn-retract');
+      if (btn) btn.classList.add('holding');
+
+      fetch('/api/' + dir, { method: 'POST' }).catch(() => {});
+
+      clearInterval(momentaryTimer);
+      const stepMs = 50;
+      momentaryTimer = setInterval(() => {
+        if (dir === 'deploy') {
+          clawTravelMs = Math.min(deployDuration, clawTravelMs + stepMs);
+          const pct = Math.round((clawTravelMs / deployDuration) * 100);
+          updateStatus(`DEPLOYING ${pct}%`, 'var(--pixel-red)', 'rgba(225, 29, 72, 0.15)');
+          if (clawTravelMs >= deployDuration) {
+            stopHold('deploy');
+            updateStatus('DEPLOYED 100%', 'var(--pixel-red)', 'rgba(225, 29, 72, 0.2)');
+          }
+        } else {
+          clawTravelMs = Math.max(0, clawTravelMs - stepMs);
+          const pct = Math.round((clawTravelMs / deployDuration) * 100);
+          updateStatus(`RETRACTING ${pct}%`, 'var(--pixel-blue)', 'rgba(37, 99, 235, 0.15)');
+          if (clawTravelMs <= 0) {
+            stopHold('retract');
+            updateStatus('RETRACTED 0%', 'var(--pixel-blue)', 'rgba(37, 99, 235, 0.2)');
+          }
         }
-      }
+      }, stepMs);
+    }
+
+    function stopHold(dir) {
+      if (activeHoldDirection !== dir) return;
+      clearInterval(momentaryTimer);
+      activeHoldDirection = null;
+
+      const btn = document.getElementById(dir === 'deploy' ? 'btn-deploy' : 'btn-retract');
+      if (btn) btn.classList.remove('holding');
+
+      fetch('/api/stop', { method: 'POST' }).catch(() => {});
+      const pct = Math.round((clawTravelMs / deployDuration) * 100);
+      updateStatus(`PAUSED (${pct}%)`, 'var(--pixel-green)', 'rgba(16, 185, 129, 0.12)');
+    }
+
+    function triggerEmergencyStop() {
+      clearInterval(momentaryTimer);
+      activeHoldDirection = null;
+      document.querySelectorAll('.btn-tactile').forEach(b => b.classList.remove('holding'));
+      fetch('/api/stop', { method: 'POST' }).catch(() => {});
+      updateStatus('STOPPED', 'var(--pixel-red)', 'rgba(225, 29, 72, 0.25)');
+      showToast('EMERGENCY STOP');
+    }
+
+    function triggerAutoDemo() {
+      clearInterval(momentaryTimer);
+      activeHoldDirection = null;
+      fetch('/api/demo', { method: 'POST' }).catch(() => {});
+      showToast('AUTO DEMO RUNNING');
+      updateStatus('DEMO RUNNING', 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.15)');
+    }
+
+    function updateStatus(text, color, bg) {
+      const pill = document.getElementById('status-pill');
+      if (!pill) return;
+      const label = pill.querySelector('span:last-child') || pill;
+      label.textContent = text;
+      if (color) pill.style.color = color;
+      if (bg) pill.style.background = bg;
     }
 
     function onSpeedSliderChange(val) {
@@ -443,23 +708,33 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       fetch('/api/config?pwm=' + val, { method: 'POST' }).catch(() => {});
     }
 
-    async function pollStatus() {
+    function saveCalibration() {
+      deployDuration = parseInt(document.getElementById('deploy-slider').value);
+      retractDuration = parseInt(document.getElementById('retract-slider').value);
+      holdDuration = parseInt(document.getElementById('hold-slider').value);
+      fetch('/api/config?pwm=' + targetPwm + '&deploy=' + deployDuration + '&retract=' + retractDuration, { method: 'POST' })
+        .then(() => showToast('CALIBRATION SAVED'))
+        .catch(() => showToast('SAVED LOCALLY'));
+    }
+
+    async function liveSyncStatus() {
       try {
         const res = await fetch('/api/status');
         if (!res.ok) return;
         const data = await res.json();
-        const pill = document.getElementById('status-pill');
-        if (pill) {
-          pill.textContent = data.state;
-          if (data.state.includes('DEPLOY')) pill.style.color = 'var(--pixel-red)';
-          else if (data.state.includes('RETRACT')) pill.style.color = 'var(--pixel-blue)';
-          else if (data.state.includes('STOP')) pill.style.color = 'var(--pixel-red)';
-          else pill.style.color = 'var(--pixel-green)';
+        if (!activeHoldDirection && data.state) {
+          updateStatus(data.state);
         }
       } catch (err) {}
     }
 
-    setInterval(pollStatus, 500);
+    function showToast(msg) {
+      const toast = document.getElementById('toast-notice');
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
+    }
   </script>
 </body>
 </html>

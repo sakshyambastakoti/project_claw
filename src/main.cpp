@@ -2,6 +2,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
+#include <ESP8266HTTPUpdateServer.h>
 #include "config.h"
 #include "web_page.h"
 
@@ -38,8 +39,9 @@ uint32_t activeDuration  = 0;
 int currentM1Pwm = 0;
 int currentM2Pwm = 0;
 
-// Web Server on port 80
+// Web Server on port 80 & OTA Update Server
 ESP8266WebServer server(80);
+ESP8266HTTPUpdateServer httpUpdater;
 
 // Status LED timing
 uint32_t lastLedBlink = 0;
@@ -336,8 +338,11 @@ void setup() {
   server.on("/api/stop", HTTP_POST, handleStop);
   server.on("/api/config", HTTP_POST, handleConfig);
 
+  // Setup Web OTA Firmware Update at /update
+  httpUpdater.setup(&server, "/update");
+
   server.begin();
-  Serial.println("[HTTP] Web Server started on port 80.");
+  Serial.println("[HTTP] Web Server & OTA Updater (/update) started on port 80.");
   Serial.println("[CLAW] System initialized in IDLE state.");
 }
 
