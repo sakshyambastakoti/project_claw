@@ -584,11 +584,409 @@ body {
   font-weight: 700;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   transition: transform 0.25s ease;
-  z-index: 100;
+  z-index: 200;
   pointer-events: none;
   white-space: nowrap;
 }
 
 .toast-notice.show {
   transform: translateX(-50%) translateY(0);
+}
+
+/* Allow text input interaction */
+input[type="text"],
+input[type="password"],
+select,
+textarea {
+  -webkit-touch-callout: default !important;
+  -webkit-user-select: text !important;
+  -khtml-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  touch-action: manipulation !important;
+}
+
+/* Wi-Fi & Hawa Wireless Titlebar Button */
+.btn-wifi-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-main);
+  color: var(--text-main);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btn-wifi-nav svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+}
+
+.btn-wifi-nav:active {
+  background: var(--btn-black-bg);
+  color: var(--btn-black-text);
+  border-color: var(--btn-black-bg);
+}
+
+.btn-wifi-nav.connected {
+  border-color: var(--pixel-green);
+  color: var(--pixel-green);
+}
+
+/* Modal Overlay & Dialog */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 14, 20, 0.65);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-dialog {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  background: var(--surface-card);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopIn {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  background: var(--surface-header);
+  border-bottom: 1px solid var(--border-main);
+}
+
+.modal-title {
+  font-family: var(--font-dot);
+  font-size: 12.5px;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+}
+
+.btn-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color 0.12s ease;
+}
+
+.btn-modal-close:hover,
+.btn-modal-close:active {
+  color: var(--text-main);
+}
+
+.btn-modal-close svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+.modal-body {
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Live Wireless Telemetry Card */
+.telemetry-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.telemetry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.telemetry-label {
+  color: var(--text-sub);
+}
+
+.telemetry-val {
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.telemetry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge-online {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--pixel-green);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-offline {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--pixel-amber);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-cloud {
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--pixel-blue);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.device-id-code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-main);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  word-break: break-all;
+}
+
+/* Wi-Fi Form Elements */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field-input-box {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.form-control-input {
+  flex: 1;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-control-input:focus {
+  border-color: var(--border-dark);
+}
+
+.btn-inline-action {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-sm);
+  padding: 0 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+.btn-inline-action svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+}
+
+.btn-inline-action:active {
+  background: var(--btn-black-bg);
+  color: var(--btn-black-text);
+}
+
+/* Scanned Wi-Fi Networks Dropdown / Container */
+.scanned-networks-box {
+  max-height: 120px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  display: flex;
+  flex-direction: column;
+}
+
+.scanned-network-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.scanned-network-item:last-child {
+  border-bottom: none;
+}
+
+.scanned-network-item:hover,
+.scanned-network-item:active {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.network-item-rssi {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Modal Actions Footer */
+.modal-footer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.btn-modal-primary {
+  background: var(--btn-black-bg);
+  color: var(--btn-black-text);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btn-modal-primary svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+.btn-modal-primary:active {
+  transform: scale(0.98);
+}
+
+.modal-secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.btn-modal-subtle {
+  background: var(--surface-elevated);
+  color: var(--text-main);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-sm);
+  padding: 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.12s ease;
+}
+
+.btn-modal-subtle:active {
+  background: var(--surface-card);
+  border-color: var(--border-dark);
+}
+
+.spinning-icon {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
 }

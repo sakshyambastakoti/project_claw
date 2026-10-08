@@ -30,6 +30,17 @@
         </div>
 
         <div class="titlebar-actions">
+          <!-- Wi-Fi & Hawa Wireless Config Button -->
+          <button class="btn-wifi-nav" id="btn-wifi-nav" onclick="openWifiModal()" title="Configure Wi-Fi & Hawa Wireless OTA">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+              <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+              <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+            <span id="nav-wifi-label">WI-FI</span>
+          </button>
+
           <!-- Small SVG OTA Feature Button -->
           <a href="/update" target="_blank" class="btn-ota" title="OTA Firmware Update (/update)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -173,6 +184,126 @@
 
     </main>
 
+  </div>
+
+  <!-- Wi-Fi & Hawa Wireless Configuration Modal -->
+  <div class="modal-backdrop" id="wifi-modal-backdrop" onclick="closeWifiModalOnBackdrop(event)">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="titlebar-left">
+          <div class="window-dots">
+            <span class="window-square-dot dot-red"></span>
+            <span class="window-square-dot dot-amber"></span>
+            <span class="window-square-dot dot-green"></span>
+          </div>
+          <span class="modal-title">WIRELESS &amp; HAWA OTA</span>
+        </div>
+        <button class="btn-modal-close" onclick="closeWifiModal()" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Live Telemetry Card -->
+        <div class="telemetry-card">
+          <div class="telemetry-row">
+            <span class="telemetry-label">Wi-Fi Status</span>
+            <span class="telemetry-val">
+              <span class="telemetry-badge badge-offline" id="modal-wifi-badge">AP ONLY</span>
+              <span id="modal-wifi-ssid">Project-CLAW</span>
+            </span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">Station IP</span>
+            <span class="telemetry-val" id="modal-station-ip">—</span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">Access Point IP</span>
+            <span class="telemetry-val" id="modal-ap-ip">192.168.4.1</span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">Hawa Cloud Link</span>
+            <span class="telemetry-val">
+              <span class="telemetry-badge badge-offline" id="modal-hawa-badge">STANDBY</span>
+            </span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">Hardware Device ID</span>
+            <span class="telemetry-val">
+              <code class="device-id-code" id="modal-device-id">hawa-esp8266-claw</code>
+              <button class="btn-inline-action" style="padding: 2px 6px; font-size: 9px;" onclick="copyDeviceId()" title="Copy Device ID">COPY</button>
+            </span>
+          </div>
+        </div>
+
+        <!-- Wi-Fi Network Provisioning Form -->
+        <div class="field-group">
+          <div class="field-label">
+            <span>Wi-Fi Network (SSID)</span>
+            <button class="btn-inline-action" id="btn-scan-networks" onclick="scanWifiNetworks()" title="Scan Nearby Wi-Fi">
+              <svg id="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+              </svg>
+              <span id="scan-btn-text">SCAN</span>
+            </button>
+          </div>
+          <!-- Scanned Networks Dropdown Container -->
+          <div class="scanned-networks-box" id="scanned-networks-box" style="display: none;"></div>
+          <input type="text" class="form-control-input" id="input-wifi-ssid" placeholder="Enter Wi-Fi SSID" autocomplete="off" autocapitalize="none">
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">
+            <span>Wi-Fi Password</span>
+            <button class="btn-inline-action" onclick="togglePasswordVisibility()" title="Show/Hide Password" id="btn-toggle-pass" style="padding: 2px 6px; font-size: 9px;">SHOW</button>
+          </div>
+          <input type="password" class="form-control-input" id="input-wifi-pass" placeholder="Enter network password" autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">
+            <span>Hawa Hub Gateway URL (Optional)</span>
+          </div>
+          <input type="text" class="form-control-input" id="input-hawa-server" placeholder="wss://your-hawa-hub.com/ws" autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">
+            <span>Device Nickname (Optional)</span>
+          </div>
+          <input type="text" class="form-control-input" id="input-device-name" placeholder="Project-CLAW" autocomplete="off">
+        </div>
+
+        <!-- Modal Actions Footer -->
+        <div class="modal-footer-actions">
+          <button class="btn-modal-primary" onclick="saveWifiCredentials()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>CONNECT &amp; SAVE WI-FI</span>
+          </button>
+          <div class="modal-secondary-row">
+            <button class="btn-modal-subtle" onclick="clearWifiCredentials()" title="Disconnect & Reset to AP">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px;">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              <span>CLEAR WI-FI</span>
+            </button>
+            <button class="btn-modal-subtle" onclick="rebootHardware()" title="Reboot Hardware">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px;">
+                <path d="M23 4v6h-6"></path>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span>REBOOT</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Notification -->
