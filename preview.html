@@ -153,8 +153,17 @@
     }
 
     @keyframes pulseGreen {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.3); opacity: 0.6; }
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.3);
+        opacity: 0.6;
+      }
     }
 
     .card-divider {
@@ -391,8 +400,15 @@
     }
 
     @keyframes pulseStopBtn {
-      0%, 100% { box-shadow: 0 0 16px rgba(255, 42, 95, 0.4); }
-      50% { box-shadow: 0 0 28px rgba(255, 42, 95, 0.8); }
+
+      0%,
+      100% {
+        box-shadow: 0 0 16px rgba(255, 42, 95, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 28px rgba(255, 42, 95, 0.8);
+      }
     }
 
     /* Section 2: Speed Controller & Presets (Directly matching index.html) */
@@ -471,7 +487,8 @@
       transition: all 0.15s ease;
     }
 
-    .btn-speed-step.active, .btn-speed-step:hover {
+    .btn-speed-step.active,
+    .btn-speed-step:hover {
       background: rgba(0, 240, 255, 0.15);
       border-color: var(--primary);
       color: #fff;
@@ -651,7 +668,8 @@
 
         <div class="card-header-actions">
           <a href="/update" target="_blank" class="ota-btn" title="Over-The-Air Firmware Update (/update)">
-            <svg class="ota-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="ota-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -703,16 +721,18 @@
         <div class="action-grid">
           <!-- Deploy Claws (Motor 1) -->
           <button class="btn-action btn-deploy" onclick="triggerCommand('deploy')" title="Deploy / Contract Claws">
-            <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v20M17 7l-5-5-5 5"/>
+            <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 7l-5-5-5 5" />
             </svg>
             <span>DEPLOY CLAWS</span>
           </button>
 
           <!-- Retract Claws (Motor 2) -->
           <button class="btn-action btn-retract" onclick="triggerCommand('retract')" title="Retract Claws">
-            <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22V2M7 17l5 5 5-5"/>
+            <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22V2M7 17l5 5 5-5" />
             </svg>
             <span>RETRACT CLAWS</span>
           </button>
@@ -721,19 +741,24 @@
         <!-- Inching / Tension Jogging Controls -->
         <div class="jog-row">
           <button class="btn-jog" onclick="triggerJog('deploy')" title="Nudge Motor 1 forward by 0.5s">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
             <span>JOG CONTRACT (0.5s)</span>
           </button>
           <button class="btn-jog" onclick="triggerJog('retract')" title="Nudge Motor 2 forward by 0.5s">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
             <span>JOG RETRACT (0.5s)</span>
           </button>
         </div>
 
         <!-- Auto Demo Routine -->
         <button class="btn-demo-full" onclick="triggerCommand('demo')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="5 3 19 12 5 21 5 3"/>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3" />
           </svg>
           <span>AUTO DEMO SEQUENCE</span>
         </button>
@@ -741,7 +766,7 @@
         <!-- Center Emergency Stop -->
         <button class="btn-center-stop" onclick="triggerCommand('stop')" title="Instant Emergency Stop">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="5" y="5" width="14" height="14" rx="3"/>
+            <rect x="5" y="5" width="14" height="14" rx="3" />
           </svg>
           <span>EMERGENCY STOP</span>
         </button>
@@ -757,7 +782,8 @@
         </div>
 
         <div class="speed-slider-wrapper">
-          <input type="range" min="300" max="1023" value="850" class="speed-slider" id="speed-slider" oninput="onSpeedSliderChange(this.value)">
+          <input type="range" min="300" max="1023" value="850" class="speed-slider" id="speed-slider"
+            oninput="onSpeedSliderChange(this.value)">
 
           <div class="speed-presets-group">
             <button class="btn-speed-step" onclick="setSpeedPreset(512, this)">50%</button>
@@ -777,7 +803,10 @@
         <div class="accordion-item" id="accordion-timing">
           <div class="accordion-header" onclick="toggleAccordion('accordion-timing')">
             <span>⏱ Timing & Travel Calibration</span>
-            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </div>
           <div class="accordion-body">
             <div class="timing-row">
@@ -785,7 +814,8 @@
                 <span>Deploy Duration</span>
                 <span class="timing-val-tag" id="deploy-time-label">3.0 s</span>
               </div>
-              <input type="range" min="1000" max="8000" step="100" value="3000" class="speed-slider" id="deploy-slider" oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+              <input type="range" min="1000" max="8000" step="100" value="3000" class="speed-slider" id="deploy-slider"
+                oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
             </div>
 
             <div class="timing-row">
@@ -793,7 +823,8 @@
                 <span>Retract Duration</span>
                 <span class="timing-val-tag" id="retract-time-label">3.0 s</span>
               </div>
-              <input type="range" min="1000" max="8000" step="100" value="3000" class="speed-slider" id="retract-slider" oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+              <input type="range" min="1000" max="8000" step="100" value="3000" class="speed-slider" id="retract-slider"
+                oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
             </div>
 
             <div class="timing-row">
@@ -801,7 +832,8 @@
                 <span>Demo Hold Duration</span>
                 <span class="timing-val-tag" id="hold-time-label">2.0 s</span>
               </div>
-              <input type="range" min="1000" max="6000" step="100" value="2000" class="speed-slider" id="hold-slider" oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+              <input type="range" min="1000" max="6000" step="100" value="2000" class="speed-slider" id="hold-slider"
+                oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
             </div>
 
             <button class="btn-save-settings" onclick="saveCalibration()">Apply Calibration</button>
@@ -812,7 +844,10 @@
         <div class="accordion-item" id="accordion-diagnostics">
           <div class="accordion-header" onclick="toggleAccordion('accordion-diagnostics')">
             <span>📶 Device Telemetry & Network</span>
-            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </div>
           <div class="accordion-body">
             <table class="diag-table">
@@ -847,7 +882,8 @@
       <!-- Card Footer: Firmware OTA Link (matching index.html) -->
       <footer class="card-footer-ota">
         <a href="/update" target="_blank" class="ota-footer-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -901,7 +937,7 @@
       if (btnElement) btnElement.classList.add('active');
 
       // Attempt live sync if connected to real controller
-      fetch(`/api/config?pwm=${val}`, { method: 'POST' }).catch(() => {});
+      fetch(`/api/config?pwm=${val}`, { method: 'POST' }).catch(() => { });
     }
 
     function saveCalibration() {
@@ -918,12 +954,12 @@
       const jogTime = 500;
       if (dir === 'deploy') {
         startMotionSimulation('DEPLOYING', jogTime, () => updateUIState('IDLE', 0, 0));
-        fetch('/api/deploy', { method: 'POST' }).catch(() => {});
-        setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => {}), jogTime);
+        fetch('/api/deploy', { method: 'POST' }).catch(() => { });
+        setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => { }), jogTime);
       } else {
         startMotionSimulation('RETRACTING', jogTime, () => updateUIState('IDLE', 0, 0));
-        fetch('/api/retract', { method: 'POST' }).catch(() => {});
-        setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => {}), jogTime);
+        fetch('/api/retract', { method: 'POST' }).catch(() => { });
+        setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => { }), jogTime);
       }
       showToast(`Jogging ${dir.toUpperCase()} (0.5s)`);
     }
@@ -933,20 +969,20 @@
         clearInterval(simTimer);
         updateUIState('STOPPED', 0, 0);
         showToast('EMERGENCY STOPPED');
-        fetch('/api/stop', { method: 'POST' }).catch(() => {});
+        fetch('/api/stop', { method: 'POST' }).catch(() => { });
         return;
       }
 
       if (cmd === 'deploy') {
-        fetch('/api/deploy', { method: 'POST' }).catch(() => {});
+        fetch('/api/deploy', { method: 'POST' }).catch(() => { });
         startMotionSimulation('DEPLOYING', deployDuration, () => updateUIState('DEPLOYED', 0, 0));
         showToast('Deploying Claws...');
       } else if (cmd === 'retract') {
-        fetch('/api/retract', { method: 'POST' }).catch(() => {});
+        fetch('/api/retract', { method: 'POST' }).catch(() => { });
         startMotionSimulation('RETRACTING', retractDuration, () => updateUIState('RETRACTED', 0, 0));
         showToast('Retracting Claws...');
       } else if (cmd === 'demo') {
-        fetch('/api/demo', { method: 'POST' }).catch(() => {});
+        fetch('/api/demo', { method: 'POST' }).catch(() => { });
         showToast('Running Full Demo Routine...');
         startMotionSimulation('DEMO (DEPLOYING)', deployDuration, () => {
           updateUIState('DEMO (HOLDING)', 0, 0);
@@ -1013,11 +1049,11 @@
       // Motor Readouts
       document.getElementById('m1-badge-state').textContent = m1 > 0 ? 'ACTIVE' : 'OFF';
       document.getElementById('m1-badge-state').style.color = m1 > 0 ? 'var(--primary)' : 'var(--text-dim)';
-      document.getElementById('m1-val').textContent = m1 > 0 ? `${Math.round((m1/1023)*100)}% (${m1} PWM)` : '0% (0 PWM)';
+      document.getElementById('m1-val').textContent = m1 > 0 ? `${Math.round((m1 / 1023) * 100)}% (${m1} PWM)` : '0% (0 PWM)';
 
       document.getElementById('m2-badge-state').textContent = m2 > 0 ? 'ACTIVE' : 'OFF';
       document.getElementById('m2-badge-state').style.color = m2 > 0 ? 'var(--accent-blue)' : 'var(--text-dim)';
-      document.getElementById('m2-val').textContent = m2 > 0 ? `${Math.round((m2/1023)*100)}% (${m2} PWM)` : '0% (0 PWM)';
+      document.getElementById('m2-val').textContent = m2 > 0 ? `${Math.round((m2 / 1023) * 100)}% (${m2} PWM)` : '0% (0 PWM)';
     }
 
     // Live Polling when connected to real ESP8266
