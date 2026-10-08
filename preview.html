@@ -4,1073 +4,466 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Project CLAW — Animatronic Controller</title>
-  <style>
-    :root {
-      --bg-dark: #0a0e17;
-      --card-bg: rgba(16, 22, 36, 0.92);
-      --card-border: rgba(56, 189, 248, 0.18);
-      --primary: #00f0ff;
-      --primary-glow: rgba(0, 240, 255, 0.4);
-      --accent-blue: #3b82f6;
-      --accent-red: #ff2a5f;
-      --accent-red-glow: rgba(255, 42, 95, 0.5);
-      --accent-green: #10b981;
-      --accent-purple: #8b5cf6;
-      --text-main: #f1f5f9;
-      --text-sub: #94a3b8;
-      --text-dim: #64748b;
-      --border-soft: rgba(255, 255, 255, 0.08);
-      --btn-bg: #1e293b;
-      --btn-hover: #334155;
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --radius-pill: 9999px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background: radial-gradient(circle at 50% 0%, #172554, var(--bg-dark) 75%);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 16px 12px 36px;
-    }
-
-    .app-viewport {
-      width: 100%;
-      max-width: 440px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Single Full-Size Card Controller Layout (Inspired by index.html) */
-    .full-controller-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      padding: 20px 18px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 25px rgba(0, 240, 255, 0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    /* Card Top Header */
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .brand-info h1 {
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      line-height: 1.1;
-      color: #fff;
-    }
-
-    .brand-info h1 span {
-      background: linear-gradient(135deg, var(--primary), #60a5fa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .brand-sub {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--text-sub);
-      margin-top: 3px;
-      font-weight: 600;
-    }
-
-    .card-header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .ota-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border-soft);
-      padding: 6px 12px;
-      border-radius: var(--radius-pill);
-      color: var(--text-sub);
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 700;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-
-    .ota-btn:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: var(--primary);
-      color: #fff;
-    }
-
-    .ota-icon {
-      width: 14px;
-      height: 14px;
-    }
-
-    .status-indicator-badge {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-soft);
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--accent-green);
-      box-shadow: 0 0 10px var(--accent-green);
-      animation: pulseGreen 2s infinite ease-in-out;
-    }
-
-    @keyframes pulseGreen {
-
-      0%,
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-
-      50% {
-        transform: scale(1.3);
-        opacity: 0.6;
-      }
-    }
-
-    .card-divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border-soft) 25%, var(--border-soft) 75%, transparent);
-      margin: 2px 0;
-    }
-
-    /* Live Telemetry Banner */
-    .telemetry-banner {
-      background: rgba(10, 14, 23, 0.7);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .telemetry-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .telemetry-tag {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--text-dim);
-    }
-
-    .state-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: var(--radius-pill);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      color: var(--accent-green);
-      transition: all 0.3s ease;
-    }
-
-    .progress-bar-bg {
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius-pill);
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), var(--accent-blue));
-      transition: width 0.12s linear;
-    }
-
-    .motor-stats-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .motor-stat-card {
-      background: rgba(255, 255, 255, 0.03);
-      padding: 8px 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .motor-stat-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      margin-bottom: 2px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .motor-stat-val {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    /* Section 1: Main Tactile Arm Actuation Section */
-    .controller-section {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .action-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .btn-action {
-      background: var(--btn-bg);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      padding: 16px 10px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn-action:active {
-      transform: scale(0.97);
-    }
-
-    .btn-deploy {
-      background: linear-gradient(145deg, #094d6e, #0369a1);
-      border-color: rgba(56, 189, 248, 0.4);
-      box-shadow: 0 4px 16px rgba(3, 105, 161, 0.3);
-    }
-
-    .btn-deploy:hover {
-      box-shadow: 0 0 20px var(--primary-glow);
-    }
-
-    .btn-retract {
-      background: linear-gradient(145deg, #1e3a8a, #2563eb);
-      border-color: rgba(96, 165, 250, 0.4);
-      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
-    }
-
-    .btn-retract:hover {
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-    }
-
-    .svg-action-icon {
-      width: 28px;
-      height: 28px;
-      stroke: currentColor;
-    }
-
-    /* Jogging / Inching Micro-Control Row */
-    .jog-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .btn-jog {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-sm);
-      padding: 8px 10px;
-      color: var(--text-sub);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .btn-jog:active {
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
-    }
-
-    /* Auto Demo & Emergency Stop */
-    .btn-demo-full {
-      width: 100%;
-      background: linear-gradient(145deg, #4c1d95, #6d28d9);
-      border: 1px solid rgba(167, 139, 250, 0.4);
-      border-radius: var(--radius-md);
-      padding: 14px 12px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(109, 40, 217, 0.3);
-      transition: all 0.2s;
-    }
-
-    .btn-demo-full:active {
-      transform: scale(0.98);
-    }
-
-    .btn-center-stop {
-      width: 100%;
-      background: linear-gradient(145deg, #881337, #be123c);
-      border: 1px solid rgba(255, 42, 95, 0.7);
-      border-radius: var(--radius-md);
-      padding: 16px 12px;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 900;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      cursor: pointer;
-      box-shadow: 0 0 20px var(--accent-red-glow);
-      animation: pulseStopBtn 2.2s infinite ease-in-out;
-      transition: all 0.15s ease;
-    }
-
-    .btn-center-stop:active {
-      transform: scale(0.97);
-    }
-
-    @keyframes pulseStopBtn {
-
-      0%,
-      100% {
-        box-shadow: 0 0 16px rgba(255, 42, 95, 0.4);
-      }
-
-      50% {
-        box-shadow: 0 0 28px rgba(255, 42, 95, 0.8);
-      }
-    }
-
-    /* Section 2: Speed Controller & Presets (Directly matching index.html) */
-    .speed-section {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .speed-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .speed-label {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--text-sub);
-    }
-
-    .speed-readout {
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--primary);
-    }
-
-    .speed-slider-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .speed-slider {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 8px;
-      border-radius: var(--radius-pill);
-      background: #1e293b;
-      outline: none;
-      cursor: pointer;
-    }
-
-    .speed-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 12px var(--primary-glow);
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-
-    .speed-slider::-webkit-slider-thumb:hover {
-      transform: scale(1.15);
-    }
-
-    .speed-presets-group {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-
-    .btn-speed-step {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-sm);
-      padding: 8px 4px;
-      color: var(--text-sub);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .btn-speed-step.active,
-    .btn-speed-step:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: var(--primary);
-      color: #fff;
-    }
-
-    /* Section 3: Hidden / Collapsible Advanced Drawers */
-    .accordion-item {
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-
-    .accordion-header {
-      padding: 12px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: var(--text-sub);
-    }
-
-    .accordion-header:hover {
-      color: #fff;
-    }
-
-    .accordion-arrow {
-      width: 16px;
-      height: 16px;
-      transition: transform 0.25s ease;
-    }
-
-    .accordion-item.open .accordion-arrow {
-      transform: rotate(180deg);
-    }
-
-    .accordion-body {
-      display: none;
-      padding: 0 14px 16px;
-      flex-direction: column;
-      gap: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-      padding-top: 12px;
-    }
-
-    .accordion-item.open .accordion-body {
-      display: flex;
-    }
-
-    .timing-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .timing-row-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--text-dim);
-      font-weight: 700;
-    }
-
-    .timing-val-tag {
-      color: var(--text-main);
-    }
-
-    .btn-save-settings {
-      background: rgba(0, 240, 255, 0.12);
-      border: 1px solid var(--primary);
-      border-radius: var(--radius-sm);
-      color: #fff;
-      padding: 10px;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      text-transform: uppercase;
-      transition: all 0.15s ease;
-      margin-top: 4px;
-    }
-
-    .btn-save-settings:hover {
-      background: var(--primary);
-      color: #000;
-    }
-
-    /* Diagnostics Table in Drawer */
-    .diag-table {
-      width: 100%;
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-
-    .diag-table tr {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .diag-table tr:last-child {
-      border-bottom: none;
-    }
-
-    .diag-val {
-      font-weight: 700;
-      color: #fff;
-    }
-
-    /* Card Footer: Firmware OTA Link (matching index.html) */
-    .card-footer-ota {
-      display: flex;
-      justify-content: center;
-      padding-top: 4px;
-    }
-
-    .ota-footer-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-dim);
-      text-decoration: none;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      transition: color 0.2s;
-    }
-
-    .ota-footer-link:hover {
-      color: var(--primary);
-    }
-
-    /* Toast Notification */
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: #1e293b;
-      border: 1px solid var(--primary);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: var(--radius-pill);
-      font-size: 12px;
-      font-weight: 700;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      z-index: 100;
-      pointer-events: none;
-    }
-
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-    }
-  </style>
+  <title>HAWA — Project CLAW Controller & Web Flasher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-  <div class="app-viewport">
+  <!-- Top Navigation Bar (Matching Reference) -->
+  <header class="navbar">
+    <a href="#" class="nav-brand" title="HAWA / Project CLAW Animatronics">
+      <div class="brand-icon-box">
+        <!-- HAWA / CLAW Logo Mark with Aerodynamic Waves -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M4 8h16M4 12h12M4 16h16" />
+        </svg>
+      </div>
+      <span class="brand-title">HAWA</span>
+    </a>
 
-    <!-- Single Full-Size Card Controller Layout (Inspired by index.html) -->
-    <main class="full-controller-card">
+    <nav class="nav-links">
+      <a class="nav-link active" onclick="selectMode('ota')">WEB FLASHER</a>
+      <a class="nav-link" onclick="selectMode('tactile')">FEATURES</a>
+      <a class="nav-link" onclick="selectMode('tactile')">CONTROLLER</a>
+      <a class="nav-link" onclick="selectMode('command')">DOCS</a>
+    </nav>
 
-      <!-- Card Top Header -->
-      <header class="card-header">
-        <div class="brand-info">
-          <h1>Project <span>CLAW</span></h1>
-          <div class="brand-sub">by HimalixLabs &bull; Animatronics</div>
-        </div>
+    <div class="nav-actions">
+      <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
+        <span id="theme-toggle-label">&amp; DARK</span>
+      </button>
 
-        <div class="card-header-actions">
-          <a href="/update" target="_blank" class="ota-btn" title="Over-The-Air Firmware Update (/update)">
-            <svg class="ota-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <span>OTA</span>
-          </a>
+      <button class="btn-command-center" onclick="selectMode('command')" title="System Architecture & Diagnostics">
+        COMMAND CENTER
+      </button>
 
-          <div class="status-indicator-badge" title="Controller Connection Status">
-            <span class="status-dot" id="status-indicator"></span>
+      <button class="btn-connect-device" id="device-connect-btn" onclick="connectWebSerial()" title="Direct Native USB Web Serial Connection">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        CONNECT DEVICE
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero Section (Matching Reference Dot-Matrix Title & Copy) -->
+  <main class="hero-container">
+
+    <div class="hero-tag-badge">
+      ZERO DRIVERS NEEDED &bull; NATIVE WEB SERIAL
+    </div>
+
+    <!-- The Dot-Matrix Typography Headline -->
+    <h1 class="hero-title">
+      TRANSFORM YOUR<br>
+      HARDWARE INTO<br>
+      A GLOBAL WIRELESS<br>
+      FLEET
+    </h1>
+
+    <p class="hero-subtitle">
+      Zero software, Arduino IDE, or driver installations needed. Plug your ESP32 or ESP8266
+      into your browser via USB, enter your Wi-Fi credentials, and unlock frictionless over-the-air
+      programming anywhere in the world.
+    </p>
+
+    <!-- Call-To-Action Button Row -->
+    <div class="hero-cta-group">
+      <button class="btn-hero-primary" onclick="connectWebSerial()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+        CONNECT USB &amp; FLASH
+      </button>
+
+      <button class="btn-hero-secondary" onclick="selectMode('tactile')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5 3 19 12 5 21 5 3" />
+        </svg>
+        OPEN FLEET DASHBOARD
+      </button>
+    </div>
+
+    <!-- Feature Bullets with Red Square Dots -->
+    <div class="hero-bullets-row">
+      <div class="hero-bullet-item">
+        <span class="bullet-red-square"></span>
+        <span>ZERO DRIVER INSTALLATION</span>
+      </div>
+      <div class="hero-bullet-item">
+        <span class="bullet-red-square"></span>
+        <span>NATIVE WEB SERIAL API</span>
+      </div>
+      <div class="hero-bullet-item">
+        <span class="bullet-red-square"></span>
+        <span>ANTI-BRICK DUAL PARTITION</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Workbench Window Card (Exact match to reference image bottom card) -->
+  <section class="workbench-container">
+    <div class="workbench-card" id="workbench-card">
+
+      <!-- Workbench Titlebar -->
+      <div class="workbench-titlebar">
+        <div class="titlebar-left">
+          <div class="window-dots">
+            <span class="window-square-dot dot-red"></span>
+            <span class="window-square-dot dot-amber"></span>
+            <span class="window-square-dot dot-green"></span>
           </div>
-        </div>
-      </header>
-
-      <div class="card-divider"></div>
-
-      <!-- Live Telemetry Banner -->
-      <div class="telemetry-banner">
-        <div class="telemetry-header">
-          <span class="telemetry-tag">System Mode</span>
-          <div class="state-badge" id="state-badge">
-            <span id="state-text">IDLE / READY</span>
-          </div>
+          <span class="window-title">HAWA WEB FLASHER &bull; FIRMWARE WORKBENCH</span>
         </div>
 
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="progress-bar"></div>
-        </div>
-
-        <div class="motor-stats-row">
-          <div class="motor-stat-card">
-            <div class="motor-stat-label">
-              <span>Motor 1 (Contract)</span>
-              <span id="m1-badge-state">OFF</span>
-            </div>
-            <div class="motor-stat-val" id="m1-val">0% (0 PWM)</div>
-          </div>
-          <div class="motor-stat-card">
-            <div class="motor-stat-label">
-              <span>Motor 2 (Retract)</span>
-              <span id="m2-badge-state">OFF</span>
-            </div>
-            <div class="motor-stat-val" id="m2-val">0% (0 PWM)</div>
-          </div>
-        </div>
+        <button class="btn-expand-window" onclick="toggleExpandWindow()" title="Expand or Restore Card Window">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" y1="3" x2="14" y2="10" />
+            <line x1="3" y1="21" x2="10" y2="14" />
+          </svg>
+          <span id="expand-btn-text">EXPAND WINDOW</span>
+        </button>
       </div>
 
-      <!-- Section 1: Main Tactile Arm Actuation Section -->
-      <section class="controller-section">
-        <div class="action-grid">
-          <!-- Deploy Claws (Motor 1) -->
-          <button class="btn-action btn-deploy" onclick="triggerCommand('deploy')" title="Deploy / Contract Claws">
-            <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v20M17 7l-5-5-5 5" />
-            </svg>
-            <span>DEPLOY CLAWS</span>
-          </button>
+      <!-- Workbench Interior Content -->
+      <div class="workbench-content">
 
-          <!-- Retract Claws (Motor 2) -->
-          <button class="btn-action btn-retract" onclick="triggerCommand('retract')" title="Retract Claws">
-            <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22V2M7 17l5 5 5-5" />
-            </svg>
-            <span>RETRACT CLAWS</span>
-          </button>
-        </div>
+        <!-- Top Mode Selector Grid (Active Card 1 + Card 2 + Card 3) -->
+        <div class="mode-selector-grid">
 
-        <!-- Inching / Tension Jogging Controls -->
-        <div class="jog-row">
-          <button class="btn-jog" onclick="triggerJog('deploy')" title="Nudge Motor 1 forward by 0.5s">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="18 15 12 9 6 15" />
-            </svg>
-            <span>JOG CONTRACT (0.5s)</span>
-          </button>
-          <button class="btn-jog" onclick="triggerJog('retract')" title="Nudge Motor 2 forward by 0.5s">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-            <span>JOG RETRACT (0.5s)</span>
-          </button>
-        </div>
-
-        <!-- Auto Demo Routine -->
-        <button class="btn-demo-full" onclick="triggerCommand('demo')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="5 3 19 12 5 21 5 3" />
-          </svg>
-          <span>AUTO DEMO SEQUENCE</span>
-        </button>
-
-        <!-- Center Emergency Stop -->
-        <button class="btn-center-stop" onclick="triggerCommand('stop')" title="Instant Emergency Stop">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="5" y="5" width="14" height="14" rx="3" />
-          </svg>
-          <span>EMERGENCY STOP</span>
-        </button>
-      </section>
-
-      <div class="card-divider"></div>
-
-      <!-- Section 2: Speed Controller & Presets (Directly matching index.html) -->
-      <section class="speed-section">
-        <div class="speed-header-row">
-          <span class="speed-label">MOTOR SPEED CONTROLLER</span>
-          <span class="speed-readout" id="speed-val-display">83% (850 PWM)</span>
-        </div>
-
-        <div class="speed-slider-wrapper">
-          <input type="range" min="300" max="1023" value="850" class="speed-slider" id="speed-slider"
-            oninput="onSpeedSliderChange(this.value)">
-
-          <div class="speed-presets-group">
-            <button class="btn-speed-step" onclick="setSpeedPreset(512, this)">50%</button>
-            <button class="btn-speed-step" onclick="setSpeedPreset(768, this)">75%</button>
-            <button class="btn-speed-step active" onclick="setSpeedPreset(850, this)">83%</button>
-            <button class="btn-speed-step" onclick="setSpeedPreset(1023, this)">100%</button>
+          <!-- Option 1: HAWA OTA Platform (Active with bold black border & red square) -->
+          <div class="mode-card active" id="mode-card-ota" onclick="selectMode('ota')">
+            <div class="mode-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M4 8h16M4 12h12M4 16h16" />
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <div class="mode-card-title">HAWA OTA PLATFORM</div>
+              <div class="mode-card-desc">Zero-config Wi-Fi provisioning &amp; remote OTA links</div>
+            </div>
+            <span class="mode-active-indicator"></span>
           </div>
-        </div>
-      </section>
 
-      <div class="card-divider"></div>
-
-      <!-- Section 3: Hidden / Collapsible Drawers (Calibration & Diagnostics) -->
-      <section style="display:flex; flex-direction:column; gap:10px;">
-
-        <!-- Accordion 1: Cable Timing & Travel Calibration -->
-        <div class="accordion-item" id="accordion-timing">
-          <div class="accordion-header" onclick="toggleAccordion('accordion-timing')">
-            <span>⏱ Timing & Travel Calibration</span>
-            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+          <!-- Option 2: Custom Firmware (.BIN) Flasher -->
+          <div class="mode-card" id="mode-card-firmware" onclick="selectMode('firmware')">
+            <div class="mode-icon-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <div class="mode-card-title">CUSTOM FIRMWARE (.BIN)</div>
+              <div class="mode-card-desc">Flash your own compiled binary from Arduino or PlatformIO</div>
+            </div>
           </div>
-          <div class="accordion-body">
-            <div class="timing-row">
-              <div class="timing-row-header">
-                <span>Deploy Duration</span>
-                <span class="timing-val-tag" id="deploy-time-label">3.0 s</span>
+
+          <!-- Option 3: Tactile Arm & Claw Controller -->
+          <div class="mode-card" id="mode-card-tactile" onclick="selectMode('tactile')">
+            <div class="mode-icon-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <div class="mode-card-title">TACTILE CLAW ACTUATOR</div>
+              <div class="mode-card-desc">Dual BTS7960 cable motion control &amp; live telemetry</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================
+             Panel 1: OTA Platform & Quick Actions
+             ======================================================== -->
+        <div class="workbench-panel active" id="panel-ota">
+
+          <!-- Telemetry Banner -->
+          <div class="telemetry-banner">
+            <div class="telemetry-header">
+              <span class="telemetry-tag">System Mode &bull; Dual Cable State</span>
+              <div class="state-badge" id="state-badge">
+                <span id="state-text">IDLE / READY</span>
               </div>
-              <input type="range" min="1000" max="8000" step="100" value="3000" class="speed-slider" id="deploy-slider"
-                oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
             </div>
 
-            <div class="timing-row">
-              <div class="timing-row-header">
-                <span>Retract Duration</span>
-                <span class="timing-val-tag" id="retract-time-label">3.0 s</span>
-              </div>
-              <input type="range" min="1000" max="8000" step="100" value="3000" class="speed-slider" id="retract-slider"
-                oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="progress-bar"></div>
             </div>
 
-            <div class="timing-row">
-              <div class="timing-row-header">
-                <span>Demo Hold Duration</span>
-                <span class="timing-val-tag" id="hold-time-label">2.0 s</span>
+            <div class="motor-telemetry-grid">
+              <div class="motor-stat-card">
+                <div class="motor-stat-label">
+                  <span>Motor 1 (Contract / Deploy)</span>
+                  <span id="m1-badge-state">OFF</span>
+                </div>
+                <div class="motor-stat-val" id="m1-val">0% (0 PWM)</div>
               </div>
-              <input type="range" min="1000" max="6000" step="100" value="2000" class="speed-slider" id="hold-slider"
-                oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+
+              <div class="motor-stat-card">
+                <div class="motor-stat-label">
+                  <span>Motor 2 (Retract Cable)</span>
+                  <span id="m2-badge-state">OFF</span>
+                </div>
+                <div class="motor-stat-val" id="m2-val">0% (0 PWM)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tactile Motion Buttons -->
+          <div class="tactile-actions-grid">
+            <button class="btn-tactile btn-tactile-deploy" onclick="triggerCommand('deploy')" title="Deploy / Contract Claws (Motor 1 Red Cable)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M12 2v20M17 7l-5-5-5 5" />
+              </svg>
+              <span>DEPLOY CLAWS (MOTOR 1)</span>
+            </button>
+
+            <button class="btn-tactile btn-tactile-retract" onclick="triggerCommand('retract')" title="Retract Claws (Motor 2 Blue Cable)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M12 22V2M7 17l5 5 5-5" />
+              </svg>
+              <span>RETRACT CLAWS (MOTOR 2)</span>
+            </button>
+          </div>
+
+          <!-- Micro Jogging Controls -->
+          <div class="jog-buttons-row">
+            <button class="btn-jog" onclick="triggerJog('deploy')" title="Nudge Motor 1 forward by 0.5s">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+              <span>JOG CONTRACT (0.5s)</span>
+            </button>
+            <button class="btn-jog" onclick="triggerJog('retract')" title="Nudge Motor 2 forward by 0.5s">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+              <span>JOG RETRACT (0.5s)</span>
+            </button>
+          </div>
+
+          <!-- Auto Routine & Emergency Stop -->
+          <div class="actions-full-row">
+            <button class="btn-auto-demo" onclick="triggerCommand('demo')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              <span>AUTO DEMO SEQUENCE</span>
+            </button>
+
+            <button class="btn-emergency-stop" onclick="triggerCommand('stop')" title="Instant Hardware Motor Cutoff">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="5" y="5" width="14" height="14" rx="2" />
+              </svg>
+              <span>EMERGENCY STOP</span>
+            </button>
+          </div>
+
+          <!-- Speed Slider Box -->
+          <div class="speed-control-box">
+            <div class="speed-box-header">
+              <span class="speed-box-title">MOTOR SPEED PWM (BTS7960)</span>
+              <span class="speed-box-readout" id="speed-val-display">83% (850 PWM)</span>
             </div>
 
-            <button class="btn-save-settings" onclick="saveCalibration()">Apply Calibration</button>
+            <input type="range" min="300" max="1023" value="850" class="custom-range-slider" id="speed-slider"
+              oninput="onSpeedSliderChange(this.value)">
+
+            <div class="speed-presets-row">
+              <button class="btn-speed-preset" onclick="setSpeedPreset(512, this)">50%</button>
+              <button class="btn-speed-preset" onclick="setSpeedPreset(768, this)">75%</button>
+              <button class="btn-speed-preset active" onclick="setSpeedPreset(850, this)">83%</button>
+              <button class="btn-speed-preset" onclick="setSpeedPreset(1023, this)">100%</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================
+             Panel 2: Custom Firmware (.BIN) & Web Serial Console
+             ======================================================== -->
+        <div class="workbench-panel" id="panel-firmware">
+          <div class="flasher-console-box">
+
+            <div class="flasher-top-controls">
+              <select class="serial-select" id="baud-rate-select">
+                <option value="115200">115200 Baud (Standard ESP)</option>
+                <option value="74880">74880 Baud (ESP Bootloader)</option>
+                <option value="9600">9600 Baud (Legacy)</option>
+              </select>
+
+              <button class="btn-hero-primary" onclick="connectWebSerial()" style="padding: 8px 16px;">
+                ⚡ CONNECT USB SERIAL
+              </button>
+
+              <a href="/update" target="_blank" class="btn-hero-secondary" style="padding: 8px 16px; text-decoration: none;">
+                🌐 OPEN WEB OTA (/update)
+              </a>
+            </div>
+
+            <!-- Drag & Drop Firmware Upload -->
+            <div class="file-dropzone" id="firmware-dropzone">
+              <input type="file" id="firmware-file-input" accept=".bin" style="display:none;">
+              <p>SELECT OR DRAG &amp; DROP FIRMWARE BINARY (.BIN)</p>
+              <span>Build file from .pio/build/nodemcuv2/firmware.bin or Arduino IDE</span>
+            </div>
+
+            <!-- Real-time Web Serial Terminal -->
+            <div class="serial-terminal" id="serial-terminal">
+              <div class="terminal-line success">[SYSTEM] Ready for native browser communication.</div>
+              <div class="terminal-line info">[COMM] Web Serial API &amp; ESP8266 REST endpoints active.</div>
+            </div>
+
           </div>
         </div>
 
-        <!-- Accordion 2: System Telemetry & Diagnostics -->
-        <div class="accordion-item" id="accordion-diagnostics">
-          <div class="accordion-header" onclick="toggleAccordion('accordion-diagnostics')">
-            <span>📶 Device Telemetry & Network</span>
-            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+        <!-- ========================================================
+             Panel 3: Tactile Controls & Calibration Drawers
+             ======================================================== -->
+        <div class="workbench-panel" id="panel-tactile">
+
+          <!-- Timing Calibration Accordion -->
+          <div class="accordion-wrapper">
+            <div class="accordion-item open" id="acc-timing">
+              <div class="accordion-header" onclick="toggleAccordion('acc-timing')">
+                <span>⏱ MOTION TIMING &amp; TRAVEL CALIBRATION</span>
+                <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="accordion-body">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px; font-family:var(--font-mono);">
+                    <span>Deploy Duration (Red Cable)</span>
+                    <span id="deploy-time-label">3.0 s</span>
+                  </div>
+                  <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="deploy-slider"
+                    oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+                </div>
+
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px; font-family:var(--font-mono);">
+                    <span>Retract Duration (Blue Cable)</span>
+                    <span id="retract-time-label">3.0 s</span>
+                  </div>
+                  <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="retract-slider"
+                    oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+                </div>
+
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px; font-family:var(--font-mono);">
+                    <span>Demo Hold Duration</span>
+                    <span id="hold-time-label">2.0 s</span>
+                  </div>
+                  <input type="range" min="1000" max="6000" step="100" value="2000" class="custom-range-slider" id="hold-slider"
+                    oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+                </div>
+
+                <button class="btn-hero-primary" onclick="saveCalibration()" style="width:100%; justify-content:center;">
+                  APPLY CALIBRATION VALUES
+                </button>
+              </div>
+            </div>
+
+            <!-- Diagnostics Accordion -->
+            <div class="accordion-item" id="acc-diag">
+              <div class="accordion-header" onclick="toggleAccordion('acc-diag')">
+                <span>📶 NETWORK &amp; HARDWARE DIAGNOSTICS</span>
+                <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="accordion-body">
+                <table class="diag-table">
+                  <tr>
+                    <td>Wi-Fi Access Point (SSID)</td>
+                    <td class="diag-val">Project-CLAW</td>
+                  </tr>
+                  <tr>
+                    <td>Access Point Password</td>
+                    <td class="diag-val">claw12345</td>
+                  </tr>
+                  <tr>
+                    <td>Web Controller IP</td>
+                    <td class="diag-val">192.168.4.1</td>
+                  </tr>
+                  <tr>
+                    <td>mDNS Hostname URL</td>
+                    <td class="diag-val">http://claw.local</td>
+                  </tr>
+                  <tr>
+                    <td>Motor 1 Drivers</td>
+                    <td class="diag-val">BTS7960 43A (RPWM: D1/GPIO5, LPWM: D2/GPIO4)</td>
+                  </tr>
+                  <tr>
+                    <td>Motor 2 Drivers</td>
+                    <td class="diag-val">BTS7960 43A (RPWM: D5/GPIO14, LPWM: D6/GPIO12)</td>
+                  </tr>
+                  <tr>
+                    <td>Hardware Dead-time Interlock</td>
+                    <td class="diag-val" style="color:var(--pixel-green)">150 ms (ACTIVE)</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+
           </div>
-          <div class="accordion-body">
-            <table class="diag-table">
-              <tr>
-                <td>Wi-Fi Access Point</td>
-                <td class="diag-val">Project-CLAW</td>
-              </tr>
-              <tr>
-                <td>IP Address</td>
-                <td class="diag-val">192.168.4.1</td>
-              </tr>
-              <tr>
-                <td>mDNS Hostname</td>
-                <td class="diag-val">http://claw.local</td>
-              </tr>
-              <tr>
-                <td>Firmware Architecture</td>
-                <td class="diag-val">ESP8266 + BTS7960</td>
-              </tr>
-              <tr>
-                <td>Controller Health</td>
-                <td class="diag-val" style="color:var(--accent-green)">OPTIMAL</td>
-              </tr>
-            </table>
+
+        </div>
+
+        <!-- ========================================================
+             Panel 4: Command Center & Fleet Docs
+             ======================================================== -->
+        <div class="workbench-panel" id="panel-command">
+          <div class="speed-control-box">
+            <h3 style="font-family: var(--font-dot); font-size: 18px; margin-bottom: 6px;">
+              COMMAND CENTER &bull; HARDWARE FLEET ARCHITECTURE
+            </h3>
+            <p style="font-size: 13px; color: var(--text-sub); line-height: 1.6;">
+              Project CLAW is a high-torque wearable animatronic mechanism with 6 claw/arm assemblies actuated by dual 12V 100RPM Johnson geared DC motors. Motor 1 contracts and deploys the claws via a red cable network, while Motor 2 retracts them via an independent blue cable network.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+              <div class="motor-stat-card">
+                <div class="motor-stat-label"><span>CONTROLLER</span></div>
+                <div class="motor-stat-val">NodeMCU ESP8266</div>
+              </div>
+              <div class="motor-stat-card">
+                <div class="motor-stat-label"><span>MOTOR DRIVERS</span></div>
+                <div class="motor-stat-val">2x BTS7960 43A H-Bridge</div>
+              </div>
+              <div class="motor-stat-card">
+                <div class="motor-stat-label"><span>POWER BUS</span></div>
+                <div class="motor-stat-val">12V 7Ah LiFePO4 / 3S LiPo</div>
+              </div>
+              <div class="motor-stat-card">
+                <div class="motor-stat-label"><span>LOGIC REGULATION</span></div>
+                <div class="motor-stat-val">12V &rarr; 5V Buck Converter</div>
+              </div>
+            </div>
           </div>
         </div>
 
-      </section>
+      </div>
 
-      <div class="card-divider"></div>
+    </div>
+  </section>
 
-      <!-- Card Footer: Firmware OTA Link (matching index.html) -->
-      <footer class="card-footer-ota">
-        <a href="/update" target="_blank" class="ota-footer-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          FIRMWARE OTA UPDATE ⚡
-        </a>
-      </footer>
+  <!-- Toast Notification -->
+  <div class="toast-notice" id="toast-notice">Settings Applied</div>
 
-    </main>
-
-  </div>
-
-  <div class="toast" id="toast-msg">Settings Applied!</div>
-
-  <script>
-    // System Local State Simulation for standalone preview.html
-    let state = 'IDLE';
-    let targetPwm = 850;
-    let deployDuration = 3000;
-    let retractDuration = 3000;
-    let holdDuration = 2000;
-    let remainingMs = 0;
-    let totalDurationMs = 0;
-    let simTimer = null;
-
-    function showToast(text) {
-      const toast = document.getElementById('toast-msg');
-      toast.textContent = text;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2200);
-    }
-
-    function toggleAccordion(id) {
-      const item = document.getElementById(id);
-      item.classList.toggle('open');
-    }
-
-    function onSpeedSliderChange(val) {
-      targetPwm = parseInt(val);
-      const pct = Math.round((targetPwm / 1023) * 100);
-      document.getElementById('speed-val-display').textContent = `${pct}% (${targetPwm} PWM)`;
-
-      // Deselect preset buttons
-      document.querySelectorAll('.btn-speed-step').forEach(btn => btn.classList.remove('active'));
-    }
-
-    function setSpeedPreset(val, btnElement) {
-      document.getElementById('speed-slider').value = val;
-      onSpeedSliderChange(val);
-      document.querySelectorAll('.btn-speed-step').forEach(btn => btn.classList.remove('active'));
-      if (btnElement) btnElement.classList.add('active');
-
-      // Attempt live sync if connected to real controller
-      fetch(`/api/config?pwm=${val}`, { method: 'POST' }).catch(() => { });
-    }
-
-    function saveCalibration() {
-      deployDuration = parseInt(document.getElementById('deploy-slider').value);
-      retractDuration = parseInt(document.getElementById('retract-slider').value);
-      holdDuration = parseInt(document.getElementById('hold-slider').value);
-
-      fetch(`/api/config?pwm=${targetPwm}&deploy=${deployDuration}&retract=${retractDuration}`, { method: 'POST' })
-        .then(() => showToast('Calibration Saved to ESP8266!'))
-        .catch(() => showToast('Saved Locally (Preview Mode)'));
-    }
-
-    function triggerJog(dir) {
-      const jogTime = 500;
-      if (dir === 'deploy') {
-        startMotionSimulation('DEPLOYING', jogTime, () => updateUIState('IDLE', 0, 0));
-        fetch('/api/deploy', { method: 'POST' }).catch(() => { });
-        setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => { }), jogTime);
-      } else {
-        startMotionSimulation('RETRACTING', jogTime, () => updateUIState('IDLE', 0, 0));
-        fetch('/api/retract', { method: 'POST' }).catch(() => { });
-        setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => { }), jogTime);
-      }
-      showToast(`Jogging ${dir.toUpperCase()} (0.5s)`);
-    }
-
-    function triggerCommand(cmd) {
-      if (cmd === 'stop') {
-        clearInterval(simTimer);
-        updateUIState('STOPPED', 0, 0);
-        showToast('EMERGENCY STOPPED');
-        fetch('/api/stop', { method: 'POST' }).catch(() => { });
-        return;
-      }
-
-      if (cmd === 'deploy') {
-        fetch('/api/deploy', { method: 'POST' }).catch(() => { });
-        startMotionSimulation('DEPLOYING', deployDuration, () => updateUIState('DEPLOYED', 0, 0));
-        showToast('Deploying Claws...');
-      } else if (cmd === 'retract') {
-        fetch('/api/retract', { method: 'POST' }).catch(() => { });
-        startMotionSimulation('RETRACTING', retractDuration, () => updateUIState('RETRACTED', 0, 0));
-        showToast('Retracting Claws...');
-      } else if (cmd === 'demo') {
-        fetch('/api/demo', { method: 'POST' }).catch(() => { });
-        showToast('Running Full Demo Routine...');
-        startMotionSimulation('DEMO (DEPLOYING)', deployDuration, () => {
-          updateUIState('DEMO (HOLDING)', 0, 0);
-          setTimeout(() => {
-            startMotionSimulation('DEMO (RETRACTING)', retractDuration, () => {
-              updateUIState('IDLE / READY', 0, 0);
-              showToast('Demo Sequence Complete!');
-            });
-          }, holdDuration);
-        });
-      }
-    }
-
-    function startMotionSimulation(stateName, duration, onComplete) {
-      clearInterval(simTimer);
-      state = stateName;
-      totalDurationMs = duration;
-      remainingMs = duration;
-
-      const isMotor1 = stateName.includes('DEPLOY');
-      const isMotor2 = stateName.includes('RETRACT');
-
-      const m1Pwm = isMotor1 ? targetPwm : 0;
-      const m2Pwm = isMotor2 ? targetPwm : 0;
-      updateUIState(stateName, m1Pwm, m2Pwm);
-
-      const stepInterval = 50;
-      simTimer = setInterval(() => {
-        remainingMs -= stepInterval;
-        if (remainingMs <= 0) {
-          clearInterval(simTimer);
-          document.getElementById('progress-bar').style.width = '0%';
-          if (onComplete) onComplete();
-        } else {
-          const pct = ((totalDurationMs - remainingMs) / totalDurationMs) * 100;
-          document.getElementById('progress-bar').style.width = `${pct}%`;
-        }
-      }, stepInterval);
-    }
-
-    function updateUIState(stateName, m1, m2) {
-      const badge = document.getElementById('state-badge');
-      const text = document.getElementById('state-text');
-      text.textContent = stateName;
-
-      if (stateName.includes('DEPLOY')) {
-        badge.style.color = 'var(--primary)';
-        badge.style.borderColor = 'rgba(0, 240, 255, 0.4)';
-        badge.style.background = 'rgba(0, 240, 255, 0.15)';
-      } else if (stateName.includes('RETRACT')) {
-        badge.style.color = '#60a5fa';
-        badge.style.borderColor = 'rgba(96, 165, 250, 0.4)';
-        badge.style.background = 'rgba(59, 130, 246, 0.15)';
-      } else if (stateName.includes('STOP')) {
-        badge.style.color = 'var(--accent-red)';
-        badge.style.borderColor = 'rgba(255, 42, 95, 0.4)';
-        badge.style.background = 'rgba(255, 42, 95, 0.15)';
-      } else {
-        badge.style.color = 'var(--accent-green)';
-        badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-        badge.style.background = 'rgba(16, 185, 129, 0.15)';
-      }
-
-      // Motor Readouts
-      document.getElementById('m1-badge-state').textContent = m1 > 0 ? 'ACTIVE' : 'OFF';
-      document.getElementById('m1-badge-state').style.color = m1 > 0 ? 'var(--primary)' : 'var(--text-dim)';
-      document.getElementById('m1-val').textContent = m1 > 0 ? `${Math.round((m1 / 1023) * 100)}% (${m1} PWM)` : '0% (0 PWM)';
-
-      document.getElementById('m2-badge-state').textContent = m2 > 0 ? 'ACTIVE' : 'OFF';
-      document.getElementById('m2-badge-state').style.color = m2 > 0 ? 'var(--accent-blue)' : 'var(--text-dim)';
-      document.getElementById('m2-val').textContent = m2 > 0 ? `${Math.round((m2 / 1023) * 100)}% (${m2} PWM)` : '0% (0 PWM)';
-    }
-
-    // Live Polling when connected to real ESP8266
-    async function liveSync() {
-      try {
-        const res = await fetch('/api/status');
-        if (!res.ok) return;
-        const data = await res.json();
-        document.getElementById('status-indicator').style.background = 'var(--accent-green)';
-        updateUIState(data.state, data.m1_pwm, data.m2_pwm);
-      } catch (err) {
-        // In local preview without ESP8266, remains connected indicator
-      }
-    }
-
-    setInterval(liveSync, 500);
-  </script>
+  <script src="app.js"></script>
 </body>
 
 </html>

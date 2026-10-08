@@ -7,318 +7,415 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Project CLAW — Animatronic Controller</title>
+  <title>HAWA — Project CLAW Controller & Web Flasher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #0a0e17;
-      --card-bg: rgba(16, 22, 36, 0.94);
-      --card-border: rgba(56, 189, 248, 0.18);
-      --primary: #00f0ff;
-      --primary-glow: rgba(0, 240, 255, 0.4);
-      --accent-blue: #3b82f6;
-      --accent-red: #ff2a5f;
-      --accent-red-glow: rgba(255, 42, 95, 0.5);
-      --accent-green: #10b981;
-      --accent-purple: #8b5cf6;
+      --canvas-bg: #ece7de;
+      --grid-dot: #b8b3a5;
+      --grid-dot-size: 20px;
+      --surface-card: #f4efe7;
+      --surface-header: #eae5dc;
+      --surface-elevated: #ffffff;
+      --border-main: #d3cebf;
+      --border-subtle: #dfdad0;
+      --border-dark: #121212;
+      --text-main: #141414;
+      --text-sub: #524f48;
+      --text-dim: #78746c;
+      --btn-black-bg: #0e0e0e;
+      --btn-black-text: #ffffff;
+      --btn-outline-bg: #f5f1ea;
+      --btn-outline-border: #bcb7aa;
+      --pixel-red: #e11d48;
+      --pixel-amber: #f59e0b;
+      --pixel-green: #10b981;
+      --pixel-blue: #2563eb;
+      --font-dot: 'DotGothic16', monospace;
+      --font-mono: 'Space Mono', monospace;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --canvas-bg: #0f1318;
+      --grid-dot: #222933;
+      --surface-card: #181d24;
+      --surface-header: #14181f;
+      --surface-elevated: #202732;
+      --border-main: #2b3543;
+      --border-subtle: #1e2632;
+      --border-dark: #f1f5f9;
       --text-main: #f1f5f9;
       --text-sub: #94a3b8;
       --text-dim: #64748b;
-      --border-soft: rgba(255, 255, 255, 0.08);
-      --btn-bg: #1e293b;
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --radius-pill: 9999px;
+      --btn-black-bg: #38bdf8;
+      --btn-black-text: #090d14;
+      --btn-outline-bg: #1c222c;
+      --btn-outline-border: #334155;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    html, body { min-height: 100vh; width: 100%; }
     body {
-      background: radial-gradient(circle at 50% 0%, #172554, var(--bg-dark) 75%);
+      background-color: var(--canvas-bg);
+      background-image: radial-gradient(circle, var(--grid-dot) 1.2px, transparent 1.2px);
+      background-size: var(--grid-dot-size) var(--grid-dot-size);
       color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 16px 12px 36px;
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      overflow-x: hidden;
+      transition: background-color 0.25s ease;
     }
 
-    .app-viewport {
+    .navbar {
       width: 100%;
-      max-width: 440px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .full-controller-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      padding: 20px 18px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 25px rgba(0, 240, 255, 0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 16px 28px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
-    .brand-info h1 {
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      line-height: 1.1;
-      color: #fff;
-    }
-
-    .brand-info h1 span {
-      background: linear-gradient(135deg, var(--primary), #60a5fa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .brand-sub {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--text-sub);
-      margin-top: 3px;
-      font-weight: 600;
-    }
-
-    .card-header-actions {
+    .nav-brand {
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-
-    .ota-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border-soft);
-      padding: 6px 12px;
-      border-radius: var(--radius-pill);
-      color: var(--text-sub);
       text-decoration: none;
-      font-size: 12px;
-      font-weight: 700;
-      transition: all 0.2s ease;
+      color: var(--text-main);
       cursor: pointer;
     }
 
-    .ota-btn:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: var(--primary);
-      color: #fff;
-    }
-
-    .ota-icon {
-      width: 14px;
-      height: 14px;
-    }
-
-    .status-indicator-badge {
+    .brand-icon-box {
+      width: 26px;
+      height: 26px;
+      background: var(--text-main);
+      color: var(--canvas-bg);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-soft);
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
+      border-radius: 2px;
     }
 
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--accent-green);
-      box-shadow: 0 0 10px var(--accent-green);
-      animation: pulseGreen 2s infinite ease-in-out;
-    }
+    .brand-icon-box svg { width: 16px; height: 16px; stroke: currentColor; }
+    .brand-title { font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
 
-    @keyframes pulseGreen {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.3); opacity: 0.6; }
-    }
-
-    .card-divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border-soft) 25%, var(--border-soft) 75%, transparent);
-      margin: 2px 0;
-    }
-
-    .telemetry-banner {
-      background: rgba(10, 14, 23, 0.7);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .telemetry-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .telemetry-tag {
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-link {
+      font-family: var(--font-mono);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 1px;
       text-transform: uppercase;
-      color: var(--text-dim);
+      color: var(--text-sub);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .nav-link:hover, .nav-link.active { color: var(--text-main); }
+
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .btn-theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid var(--border-main);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+    .btn-theme-toggle:hover { border-color: var(--text-main); color: var(--text-main); }
+
+    .btn-command-center {
+      background: transparent;
+      border: 1px solid var(--border-dark);
+      padding: 7px 14px;
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-main);
+      cursor: pointer;
     }
 
+    .btn-connect-device {
+      background: var(--btn-black-bg);
+      border: 1px solid var(--btn-black-bg);
+      color: var(--btn-black-text);
+      padding: 7px 16px;
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hero-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 36px 20px 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.45);
+      border: 1px solid var(--border-main);
+      padding: 5px 14px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-bottom: 22px;
+    }
+
+    .hero-title {
+      font-family: var(--font-dot);
+      font-size: clamp(32px, 5.2vw, 56px);
+      font-weight: 700;
+      letter-spacing: 4px;
+      line-height: 1.24;
+      text-transform: uppercase;
+      color: var(--text-main);
+      margin-bottom: 20px;
+      max-width: 840px;
+      user-select: text;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-sans);
+      font-size: 14.5px;
+      line-height: 1.65;
+      color: var(--text-sub);
+      max-width: 660px;
+      margin-bottom: 28px;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .btn-hero-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--btn-black-bg);
+      color: var(--btn-black-text);
+      border: 1px solid var(--border-dark);
+      padding: 12px 22px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .btn-hero-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--btn-outline-bg);
+      color: var(--text-main);
+      border: 1px solid var(--btn-outline-border);
+      padding: 12px 22px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .hero-bullets-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 34px;
+    }
+
+    .hero-bullet-item { display: inline-flex; align-items: center; gap: 7px; }
+    .bullet-red-square { display: inline-block; width: 6px; height: 6px; background: var(--pixel-red); }
+
+    .workbench-container { width: 100%; max-width: 980px; margin: 0 auto 60px; padding: 0 16px; }
+    .workbench-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-main);
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+    .workbench-card.expanded { max-width: 1240px; }
+
+    .workbench-titlebar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px;
+      background: var(--surface-header);
+      border-bottom: 1px solid var(--border-main);
+    }
+    .titlebar-left { display: flex; align-items: center; gap: 12px; }
+    .window-dots { display: flex; align-items: center; gap: 5px; }
+    .window-square-dot { width: 8px; height: 8px; border-radius: 1px; }
+    .dot-red { background: #ef4444; }
+    .dot-amber { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+
+    .window-title { font-family: var(--font-dot); font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-sub); }
+    .btn-expand-window {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid var(--border-main);
+      padding: 4px 10px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .workbench-content { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+    .mode-selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+    .mode-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-main);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+    }
+    .mode-card.active { background: var(--surface-elevated); border: 2px solid var(--border-dark); box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
+    .mode-icon-box {
+      width: 44px;
+      height: 44px;
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border-main);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--text-main);
+    }
+    .mode-card.active .mode-icon-box { background: var(--btn-black-bg); border-color: var(--btn-black-bg); color: var(--btn-black-text); }
+    .mode-card-title { font-family: var(--font-dot); font-size: 15px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-main); margin-bottom: 2px; }
+    .mode-card-desc { font-size: 11px; color: var(--text-sub); line-height: 1.35; }
+    .mode-active-indicator { position: absolute; top: 9px; right: 9px; width: 6px; height: 6px; background: var(--pixel-red); }
+
+    .workbench-panel { display: none; flex-direction: column; gap: 16px; }
+    .workbench-panel.active { display: flex; }
+
+    .telemetry-banner {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-main);
+      border-radius: 4px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .telemetry-header { display: flex; justify-content: space-between; align-items: center; }
+    .telemetry-tag { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
     .state-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 4px 12px;
-      border-radius: var(--radius-pill);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      color: var(--accent-green);
-      transition: all 0.3s ease;
-    }
-
-    .progress-bar-bg {
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius-pill);
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), var(--accent-blue));
-      transition: width 0.12s linear;
-    }
-
-    .motor-stats-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .motor-stat-card {
-      background: rgba(255, 255, 255, 0.03);
-      padding: 8px 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .motor-stat-label {
-      font-size: 10px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 11px;
       font-weight: 700;
-      color: var(--text-dim);
+      letter-spacing: 0.8px;
       text-transform: uppercase;
-      margin-bottom: 2px;
-      display: flex;
-      justify-content: space-between;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: var(--pixel-green);
     }
 
-    .motor-stat-val {
+    .progress-bar-bg { width: 100%; height: 7px; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: 2px; overflow: hidden; }
+    .progress-bar-fill { width: 0%; height: 100%; background: var(--text-main); transition: width 0.1s linear; }
+
+    .motor-telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .motor-stat-card { background: var(--surface-card); padding: 10px 12px; border-radius: 3px; border: 1px solid var(--border-subtle); }
+    .motor-stat-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 3px; display: flex; justify-content: space-between; }
+    .motor-stat-val { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text-main); }
+
+    .tactile-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-tactile {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-main);
+      border-radius: 4px;
+      padding: 18px 14px;
+      color: var(--text-main);
+      font-family: var(--font-mono);
       font-size: 13px;
       font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .controller-section {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .action-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .btn-action {
-      background: var(--btn-bg);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      padding: 16px 10px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 8px;
       cursor: pointer;
-      transition: all 0.15s ease;
     }
+    .btn-tactile-deploy { border-left: 4px solid var(--pixel-red); }
+    .btn-tactile-retract { border-left: 4px solid var(--pixel-blue); }
+    .btn-tactile svg { width: 26px; height: 26px; stroke: currentColor; }
 
-    .btn-action:active {
-      transform: scale(0.97);
-    }
-
-    .btn-deploy {
-      background: linear-gradient(145deg, #094d6e, #0369a1);
-      border-color: rgba(56, 189, 248, 0.4);
-      box-shadow: 0 4px 16px rgba(3, 105, 161, 0.3);
-    }
-
-    .btn-deploy:hover {
-      box-shadow: 0 0 20px var(--primary-glow);
-    }
-
-    .btn-retract {
-      background: linear-gradient(145deg, #1e3a8a, #2563eb);
-      border-color: rgba(96, 165, 250, 0.4);
-      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
-    }
-
-    .btn-retract:hover {
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-    }
-
-    .svg-action-icon {
-      width: 28px;
-      height: 28px;
-      stroke: currentColor;
-    }
-
-    .jog-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
+    .jog-buttons-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .btn-jog {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-sm);
-      padding: 8px 10px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-main);
+      border-radius: 3px;
+      padding: 9px 12px;
       color: var(--text-sub);
+      font-family: var(--font-mono);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.5px;
@@ -327,548 +424,396 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       justify-content: center;
       gap: 6px;
       cursor: pointer;
-      transition: all 0.15s ease;
     }
 
-    .btn-jog:active {
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
-    }
-
-    .btn-demo-full {
-      width: 100%;
-      background: linear-gradient(145deg, #4c1d95, #6d28d9);
-      border: 1px solid rgba(167, 139, 250, 0.4);
-      border-radius: var(--radius-md);
-      padding: 14px 12px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 1px;
+    .actions-full-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
+    .btn-auto-demo {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-dark);
+      border-radius: 3px;
+      padding: 12px 14px;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(109, 40, 217, 0.3);
-      transition: all 0.2s;
     }
-
-    .btn-demo-full:active {
-      transform: scale(0.98);
-    }
-
-    .btn-center-stop {
-      width: 100%;
-      background: linear-gradient(145deg, #881337, #be123c);
-      border: 1px solid rgba(255, 42, 95, 0.7);
-      border-radius: var(--radius-md);
-      padding: 16px 12px;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 900;
+    .btn-emergency-stop {
+      background: var(--pixel-red);
+      border: 1px solid var(--pixel-red);
+      border-radius: 3px;
+      padding: 12px 14px;
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       cursor: pointer;
-      box-shadow: 0 0 20px var(--accent-red-glow);
-      animation: pulseStopBtn 2.2s infinite ease-in-out;
-      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);
     }
 
-    .btn-center-stop:active {
-      transform: scale(0.97);
-    }
-
-    @keyframes pulseStopBtn {
-      0%, 100% { box-shadow: 0 0 16px rgba(255, 42, 95, 0.4); }
-      50% { box-shadow: 0 0 28px rgba(255, 42, 95, 0.8); }
-    }
-
-    .speed-section {
+    .speed-control-box {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-main);
+      border-radius: 4px;
+      padding: 14px 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
+    .speed-box-header { display: flex; justify-content: space-between; align-items: center; }
+    .speed-box-title { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-sub); }
+    .speed-box-readout { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text-main); }
 
-    .speed-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .speed-label {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--text-sub);
-    }
-
-    .speed-readout {
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--primary);
-    }
-
-    .speed-slider-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .speed-slider {
+    .custom-range-slider {
       -webkit-appearance: none;
       width: 100%;
-      height: 8px;
-      border-radius: var(--radius-pill);
-      background: #1e293b;
+      height: 6px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-main);
+      border-radius: 3px;
       outline: none;
-      cursor: pointer;
     }
-
-    .speed-slider::-webkit-slider-thumb {
+    .custom-range-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 12px var(--primary-glow);
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-
-    .speed-presets-group {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-
-    .btn-speed-step {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-sm);
-      padding: 8px 4px;
-      color: var(--text-sub);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .btn-speed-step.active, .btn-speed-step:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: var(--primary);
-      color: #fff;
-    }
-
-    .accordion-item {
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-
-    .accordion-header {
-      padding: 12px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: var(--text-sub);
-    }
-
-    .accordion-arrow {
       width: 16px;
       height: 16px;
-      transition: transform 0.25s ease;
-    }
-
-    .accordion-item.open .accordion-arrow {
-      transform: rotate(180deg);
-    }
-
-    .accordion-body {
-      display: none;
-      padding: 0 14px 16px;
-      flex-direction: column;
-      gap: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-      padding-top: 12px;
-    }
-
-    .accordion-item.open .accordion-body {
-      display: flex;
-    }
-
-    .timing-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .timing-row-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--text-dim);
-      font-weight: 700;
-    }
-
-    .timing-val-tag {
-      color: var(--text-main);
-    }
-
-    .btn-save-settings {
-      background: rgba(0, 240, 255, 0.12);
-      border: 1px solid var(--primary);
-      border-radius: var(--radius-sm);
-      color: #fff;
-      padding: 10px;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
+      background: var(--btn-black-bg);
+      border: 1px solid var(--border-dark);
+      border-radius: 2px;
       cursor: pointer;
-      text-transform: uppercase;
-      transition: all 0.15s ease;
-      margin-top: 4px;
     }
 
-    .btn-save-settings:hover {
-      background: var(--primary);
-      color: #000;
-    }
-
-    .diag-table {
-      width: 100%;
+    .speed-presets-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .btn-speed-preset {
+      background: var(--surface-card);
+      border: 1px solid var(--border-main);
+      border-radius: 3px;
+      padding: 6px;
+      font-family: var(--font-mono);
       font-size: 11px;
+      font-weight: 700;
       color: var(--text-sub);
+      cursor: pointer;
     }
+    .btn-speed-preset.active { background: var(--btn-black-bg); color: var(--btn-black-text); border-color: var(--btn-black-bg); }
 
-    .diag-table tr {
+    .accordion-wrapper { display: flex; flex-direction: column; gap: 8px; }
+    .accordion-item { border: 1px solid var(--border-main); border-radius: 4px; background: var(--surface-elevated); overflow: hidden; }
+    .accordion-header {
+      padding: 12px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-main);
       display: flex;
       justify-content: space-between;
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .diag-val {
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .card-footer-ota {
-      display: flex;
-      justify-content: center;
-      padding-top: 4px;
-    }
-
-    .ota-footer-link {
-      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      color: var(--text-dim);
-      text-decoration: none;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      transition: color 0.2s;
+      cursor: pointer;
+      background: var(--surface-card);
     }
+    .accordion-arrow { width: 14px; height: 14px; transition: transform 0.15s ease; }
+    .accordion-item.open .accordion-arrow { transform: rotate(180deg); }
+    .accordion-body { display: none; padding: 14px; flex-direction: column; gap: 12px; border-top: 1px solid var(--border-subtle); }
+    .accordion-item.open .accordion-body { display: flex; }
 
-    .ota-footer-link:hover {
-      color: var(--primary);
-    }
+    .diag-table { width: 100%; font-family: var(--font-mono); font-size: 11px; border-collapse: collapse; }
+    .diag-table td { padding: 6px 0; border-bottom: 1px solid var(--border-subtle); color: var(--text-sub); }
+    .diag-table tr:last-child td { border-bottom: none; }
+    .diag-table .diag-val { text-align: right; font-weight: 700; color: var(--text-main); }
 
-    .toast {
+    .toast-notice {
       position: fixed;
-      bottom: 20px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%) translateY(100px);
-      background: #1e293b;
-      border: 1px solid var(--primary);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: var(--radius-pill);
-      font-size: 12px;
+      background: var(--btn-black-bg);
+      border: 1px solid var(--border-dark);
+      color: var(--btn-black-text);
+      padding: 8px 18px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
       font-weight: 700;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      transition: transform 0.25s ease;
       z-index: 100;
       pointer-events: none;
     }
+    .toast-notice.show { transform: translateX(-50%) translateY(0); }
 
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
+    @media (max-width: 768px) {
+      .navbar { padding: 12px 16px; flex-wrap: wrap; gap: 12px; }
+      .nav-links { order: 3; width: 100%; justify-content: center; gap: 16px; padding-top: 6px; }
+      .hero-container { padding: 24px 16px 16px; }
+      .hero-title { letter-spacing: 2px; }
+      .tactile-actions-grid { grid-template-columns: 1fr; }
+      .actions-full-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
+
 <body>
-  <div class="app-viewport">
-    <main class="full-controller-card">
-      <header class="card-header">
-        <div class="brand-info">
-          <h1>Project <span>CLAW</span></h1>
-          <div class="brand-sub">by HimalixLabs &bull; Animatronics</div>
-        </div>
-        <div class="card-header-actions">
-          <a href="/update" target="_blank" class="ota-btn" title="Over-The-Air Firmware Update (/update)">
-            <svg class="ota-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <span>OTA</span>
-          </a>
-          <div class="status-indicator-badge" title="Controller Connection Status">
-            <span class="status-dot" id="status-indicator"></span>
-          </div>
-        </div>
-      </header>
+  <!-- Header -->
+  <header class="navbar">
+    <a href="#" class="nav-brand">
+      <div class="brand-icon-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M4 8h16M4 12h12M4 16h16" />
+        </svg>
+      </div>
+      <span class="brand-title">HAWA</span>
+    </a>
 
-      <div class="card-divider"></div>
+    <nav class="nav-links">
+      <a class="nav-link active" onclick="selectMode('ota')">WEB FLASHER</a>
+      <a class="nav-link" onclick="selectMode('tactile')">FEATURES</a>
+      <a class="nav-link" onclick="selectMode('tactile')">CONTROLLER</a>
+      <a class="nav-link" onclick="selectMode('command')">DOCS</a>
+    </nav>
 
-      <div class="telemetry-banner">
-        <div class="telemetry-header">
-          <span class="telemetry-tag">System Mode</span>
-          <div class="state-badge" id="state-badge">
-            <span id="state-text">IDLE / READY</span>
-          </div>
-        </div>
+    <div class="nav-actions">
+      <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-toggle-label">☾ DARK</span>
+      </button>
+      <button class="btn-command-center" onclick="selectMode('command')">COMMAND CENTER</button>
+      <a href="/update" target="_blank" class="btn-connect-device" style="text-decoration:none;">CONNECT DEVICE</a>
+    </div>
+  </header>
 
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="progress-bar"></div>
-        </div>
+  <!-- Hero Section -->
+  <main class="hero-container">
+    <div class="hero-tag-badge">ZERO DRIVERS NEEDED &bull; NATIVE WEB SERIAL</div>
 
-        <div class="motor-stats-row">
-          <div class="motor-stat-card">
-            <div class="motor-stat-label">
-              <span>Motor 1 (Contract)</span>
-              <span id="m1-badge-state">OFF</span>
-            </div>
-            <div class="motor-stat-val" id="m1-val">0% (0 PWM)</div>
+    <h1 class="hero-title">
+      TRANSFORM YOUR<br>
+      HARDWARE INTO<br>
+      A GLOBAL WIRELESS<br>
+      FLEET
+    </h1>
+
+    <p class="hero-subtitle">
+      Zero software, Arduino IDE, or driver installations needed. Plug your ESP32 or ESP8266
+      into your browser via USB, enter your Wi-Fi credentials, and unlock frictionless over-the-air
+      programming anywhere in the world.
+    </p>
+
+    <div class="hero-cta-group">
+      <button class="btn-hero-primary" onclick="selectMode('tactile')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+        CONNECT USB &amp; FLASH
+      </button>
+      <button class="btn-hero-secondary" onclick="selectMode('tactile')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5 3 19 12 5 21 5 3" />
+        </svg>
+        OPEN FLEET DASHBOARD
+      </button>
+    </div>
+
+    <div class="hero-bullets-row">
+      <div class="hero-bullet-item"><span class="bullet-red-square"></span><span>ZERO DRIVER INSTALLATION</span></div>
+      <div class="hero-bullet-item"><span class="bullet-red-square"></span><span>NATIVE WEB SERIAL API</span></div>
+      <div class="hero-bullet-item"><span class="bullet-red-square"></span><span>ANTI-BRICK DUAL PARTITION</span></div>
+    </div>
+  </main>
+
+  <!-- Workbench Window Card -->
+  <section class="workbench-container">
+    <div class="workbench-card" id="workbench-card">
+      <div class="workbench-titlebar">
+        <div class="titlebar-left">
+          <div class="window-dots">
+            <span class="window-square-dot dot-red"></span>
+            <span class="window-square-dot dot-amber"></span>
+            <span class="window-square-dot dot-green"></span>
           </div>
-          <div class="motor-stat-card">
-            <div class="motor-stat-label">
-              <span>Motor 2 (Retract)</span>
-              <span id="m2-badge-state">OFF</span>
-            </div>
-            <div class="motor-stat-val" id="m2-val">0% (0 PWM)</div>
-          </div>
+          <span class="window-title">HAWA WEB FLASHER &bull; FIRMWARE WORKBENCH</span>
         </div>
+        <button class="btn-expand-window" onclick="toggleExpandWindow()">
+          <span id="expand-btn-text">EXPAND WINDOW</span>
+        </button>
       </div>
 
-      <section class="controller-section">
-        <div class="action-grid">
-          <button class="btn-action btn-deploy" onclick="triggerCommand('deploy')" title="Deploy / Contract Claws">
-            <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v20M17 7l-5-5-5 5"/>
-            </svg>
-            <span>DEPLOY CLAWS</span>
-          </button>
-
-          <button class="btn-action btn-retract" onclick="triggerCommand('retract')" title="Retract Claws">
-            <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22V2M7 17l5 5 5-5"/>
-            </svg>
-            <span>RETRACT CLAWS</span>
-          </button>
-        </div>
-
-        <div class="jog-row">
-          <button class="btn-jog" onclick="triggerJog('deploy')" title="Nudge Motor 1 forward by 0.5s">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-            <span>JOG CONTRACT (0.5s)</span>
-          </button>
-          <button class="btn-jog" onclick="triggerJog('retract')" title="Nudge Motor 2 forward by 0.5s">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            <span>JOG RETRACT (0.5s)</span>
-          </button>
-        </div>
-
-        <button class="btn-demo-full" onclick="triggerCommand('demo')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="5 3 19 12 5 21 5 3"/>
-          </svg>
-          <span>AUTO DEMO SEQUENCE</span>
-        </button>
-
-        <button class="btn-center-stop" onclick="triggerCommand('stop')" title="Instant Emergency Stop">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="5" y="5" width="14" height="14" rx="3"/>
-          </svg>
-          <span>EMERGENCY STOP</span>
-        </button>
-      </section>
-
-      <div class="card-divider"></div>
-
-      <section class="speed-section">
-        <div class="speed-header-row">
-          <span class="speed-label">MOTOR SPEED CONTROLLER</span>
-          <span class="speed-readout" id="speed-val-display">83% (850 PWM)</span>
-        </div>
-
-        <div class="speed-slider-wrapper">
-          <input type="range" min="300" max="1023" value="850" class="speed-slider" id="speed-slider" oninput="onSpeedSliderChange(this.value)">
-
-          <div class="speed-presets-group">
-            <button class="btn-speed-step" onclick="setSpeedPreset(512, this)">50%</button>
-            <button class="btn-speed-step" onclick="setSpeedPreset(768, this)">75%</button>
-            <button class="btn-speed-step active" onclick="setSpeedPreset(850, this)">83%</button>
-            <button class="btn-speed-step" onclick="setSpeedPreset(1023, this)">100%</button>
-          </div>
-        </div>
-      </section>
-
-      <div class="card-divider"></div>
-
-      <section style="display:flex; flex-direction:column; gap:10px;">
-        <div class="accordion-item" id="accordion-timing">
-          <div class="accordion-header" onclick="toggleAccordion('accordion-timing')">
-            <span>⏱ Timing & Travel Calibration</span>
-            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </div>
-          <div class="accordion-body">
-            <div class="timing-row">
-              <div class="timing-row-header">
-                <span>Deploy Duration</span>
-                <span class="timing-val-tag" id="deploy-time-label">3.0 s</span>
-              </div>
-              <input type="range" min="1000" max="8000" step="100" value="3000" class="speed-slider" id="deploy-slider" oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+      <div class="workbench-content">
+        <!-- Mode Cards -->
+        <div class="mode-selector-grid">
+          <div class="mode-card active" id="mode-card-ota" onclick="selectMode('ota')">
+            <div class="mode-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M4 8h16M4 12h12M4 16h16" />
+              </svg>
             </div>
-
-            <div class="timing-row">
-              <div class="timing-row-header">
-                <span>Retract Duration</span>
-                <span class="timing-val-tag" id="retract-time-label">3.0 s</span>
-              </div>
-              <input type="range" min="1000" max="8000" step="100" value="3000" class="speed-slider" id="retract-slider" oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+            <div>
+              <div class="mode-card-title">HAWA OTA PLATFORM</div>
+              <div class="mode-card-desc">Zero-config Wi-Fi provisioning &amp; remote OTA links</div>
             </div>
+            <span class="mode-active-indicator"></span>
+          </div>
 
-            <div class="timing-row">
-              <div class="timing-row-header">
-                <span>Demo Hold Duration</span>
-                <span class="timing-val-tag" id="hold-time-label">2.0 s</span>
-              </div>
-              <input type="range" min="1000" max="6000" step="100" value="2000" class="speed-slider" id="hold-slider" oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
+          <div class="mode-card" id="mode-card-firmware" onclick="window.open('/update','_blank')">
+            <div class="mode-icon-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
             </div>
-
-            <button class="btn-save-settings" onclick="saveCalibration()">Apply Calibration</button>
+            <div>
+              <div class="mode-card-title">CUSTOM FIRMWARE (.BIN)</div>
+              <div class="mode-card-desc">Flash your own compiled binary from Arduino or PlatformIO</div>
+            </div>
           </div>
         </div>
 
-        <div class="accordion-item" id="accordion-diagnostics">
-          <div class="accordion-header" onclick="toggleAccordion('accordion-diagnostics')">
-            <span>📶 Device Telemetry & Network</span>
-            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <!-- Telemetry & Actuation Panel -->
+        <div class="workbench-panel active" id="panel-ota">
+          <div class="telemetry-banner">
+            <div class="telemetry-header">
+              <span class="telemetry-tag">System Mode &bull; Dual Cable State</span>
+              <div class="state-badge" id="state-badge"><span id="state-text">IDLE / READY</span></div>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar"></div></div>
+            <div class="motor-telemetry-grid">
+              <div class="motor-stat-card">
+                <div class="motor-stat-label"><span>Motor 1 (Contract)</span><span id="m1-badge-state">OFF</span></div>
+                <div class="motor-stat-val" id="m1-val">0% (0 PWM)</div>
+              </div>
+              <div class="motor-stat-card">
+                <div class="motor-stat-label"><span>Motor 2 (Retract)</span><span id="m2-badge-state">OFF</span></div>
+                <div class="motor-stat-val" id="m2-val">0% (0 PWM)</div>
+              </div>
+            </div>
           </div>
-          <div class="accordion-body">
-            <table class="diag-table">
-              <tr>
-                <td>Wi-Fi Access Point</td>
-                <td class="diag-val">Project-CLAW</td>
-              </tr>
-              <tr>
-                <td>IP Address</td>
-                <td class="diag-val">192.168.4.1</td>
-              </tr>
-              <tr>
-                <td>mDNS Hostname</td>
-                <td class="diag-val">http://claw.local</td>
-              </tr>
-              <tr>
-                <td>Firmware Architecture</td>
-                <td class="diag-val">ESP8266 + BTS7960</td>
-              </tr>
-              <tr>
-                <td>Controller Health</td>
-                <td class="diag-val" style="color:var(--accent-green)">OPTIMAL</td>
-              </tr>
-            </table>
+
+          <div class="tactile-actions-grid">
+            <button class="btn-tactile btn-tactile-deploy" onclick="triggerCommand('deploy')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 7l-5-5-5 5" /></svg>
+              <span>DEPLOY CLAWS (MOTOR 1)</span>
+            </button>
+            <button class="btn-tactile btn-tactile-retract" onclick="triggerCommand('retract')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22V2M7 17l5 5 5-5" /></svg>
+              <span>RETRACT CLAWS (MOTOR 2)</span>
+            </button>
           </div>
+
+          <div class="jog-buttons-row">
+            <button class="btn-jog" onclick="triggerJog('deploy')">JOG CONTRACT (0.5s)</button>
+            <button class="btn-jog" onclick="triggerJog('retract')">JOG RETRACT (0.5s)</button>
+          </div>
+
+          <div class="actions-full-row">
+            <button class="btn-auto-demo" onclick="triggerCommand('demo')">AUTO DEMO SEQUENCE</button>
+            <button class="btn-emergency-stop" onclick="triggerCommand('stop')">EMERGENCY STOP</button>
+          </div>
+
+          <div class="speed-control-box">
+            <div class="speed-box-header">
+              <span class="speed-box-title">MOTOR SPEED PWM</span>
+              <span class="speed-box-readout" id="speed-val-display">83% (850 PWM)</span>
+            </div>
+            <input type="range" min="300" max="1023" value="850" class="custom-range-slider" id="speed-slider" oninput="onSpeedSliderChange(this.value)">
+            <div class="speed-presets-row">
+              <button class="btn-speed-preset" onclick="setSpeedPreset(512, this)">50%</button>
+              <button class="btn-speed-preset" onclick="setSpeedPreset(768, this)">75%</button>
+              <button class="btn-speed-preset active" onclick="setSpeedPreset(850, this)">83%</button>
+              <button class="btn-speed-preset" onclick="setSpeedPreset(1023, this)">100%</button>
+            </div>
+          </div>
+
+          <div class="accordion-wrapper">
+            <div class="accordion-item" id="acc-diag">
+              <div class="accordion-header" onclick="toggleAccordion('acc-diag')">
+                <span>📶 NETWORK &amp; HARDWARE DIAGNOSTICS</span>
+                <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+              </div>
+              <div class="accordion-body">
+                <table class="diag-table">
+                  <tr><td>Wi-Fi Access Point</td><td class="diag-val">Project-CLAW</td></tr>
+                  <tr><td>IP Address</td><td class="diag-val">192.168.4.1</td></tr>
+                  <tr><td>mDNS Hostname</td><td class="diag-val">http://claw.local</td></tr>
+                  <tr><td>Drivers</td><td class="diag-val">BTS7960 43A (D1/D2, D5/D6)</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
         </div>
-      </section>
 
-      <div class="card-divider"></div>
+      </div>
+    </div>
+  </section>
 
-      <footer class="card-footer-ota">
-        <a href="/update" target="_blank" class="ota-footer-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          FIRMWARE OTA UPDATE ⚡
-        </a>
-      </footer>
-    </main>
-  </div>
-
-  <div class="toast" id="toast-msg">Settings Applied!</div>
+  <div class="toast-notice" id="toast-notice">Settings Applied</div>
 
   <script>
     let targetPwm = 850;
 
-    function showToast(text) {
-      const toast = document.getElementById('toast-msg');
-      toast.textContent = text;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
+    function toggleTheme() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('theme-toggle-label').textContent = '☾ DARK';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-toggle-label').textContent = '☀ LIGHT';
+      }
+    }
+
+    function toggleExpandWindow() {
+      const card = document.getElementById('workbench-card');
+      card.classList.toggle('expanded');
     }
 
     function toggleAccordion(id) {
       document.getElementById(id).classList.toggle('open');
     }
 
-    function onSpeedSliderChange(val) {
-      targetPwm = parseInt(val);
-      const pct = Math.round((targetPwm / 1023) * 100);
-      document.getElementById('speed-val-display').textContent = `${pct}% (${targetPwm} PWM)`;
-      document.querySelectorAll('.btn-speed-step').forEach(btn => btn.classList.remove('active'));
-    }
-
-    function setSpeedPreset(val, btnElement) {
-      document.getElementById('speed-slider').value = val;
-      onSpeedSliderChange(val);
-      document.querySelectorAll('.btn-speed-step').forEach(btn => btn.classList.remove('active'));
-      if (btnElement) btnElement.classList.add('active');
-      fetch(`/api/config?pwm=${val}`, { method: 'POST' }).catch(() => {});
-    }
-
-    function saveCalibration() {
-      const deploy = document.getElementById('deploy-slider').value;
-      const retract = document.getElementById('retract-slider').value;
-      fetch(`/api/config?pwm=${targetPwm}&deploy=${deploy}&retract=${retract}`, { method: 'POST' })
-        .then(() => showToast('Calibration Saved!'))
-        .catch(() => showToast('Failed to save'));
-    }
-
-    function triggerJog(dir) {
-      const endpoint = dir === 'deploy' ? '/api/deploy' : '/api/retract';
-      fetch(endpoint, { method: 'POST' }).then(() => {
-        showToast(`Jogging ${dir.toUpperCase()} (0.5s)`);
-        setTimeout(() => fetch('/api/stop', { method: 'POST' }), 500);
-      });
+    function showToast(msg) {
+      const toast = document.getElementById('toast-notice');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
     function triggerCommand(cmd) {
-      fetch('/api/' + cmd, { method: 'POST' })
-        .then(() => {
-          if (cmd === 'stop') showToast('EMERGENCY STOPPED');
-          else if (cmd === 'deploy') showToast('Deploying Claws...');
-          else if (cmd === 'retract') showToast('Retracting Claws...');
-          else if (cmd === 'demo') showToast('Demo Running...');
-          pollStatus();
-        });
+      fetch('/api/' + cmd, { method: 'POST' }).catch(() => {});
+      showToast('Command: ' + cmd.toUpperCase());
+    }
+
+    function triggerJog(dir) {
+      fetch('/api/' + dir, { method: 'POST' }).catch(() => {});
+      setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => {}), 500);
+      showToast('Jog: ' + dir.toUpperCase());
+    }
+
+    function onSpeedSliderChange(val) {
+      targetPwm = parseInt(val);
+      const pct = Math.round((targetPwm / 1023) * 100);
+      document.getElementById('speed-val-display').textContent = pct + '% (' + targetPwm + ' PWM)';
+      document.querySelectorAll('.btn-speed-preset').forEach(b => b.classList.remove('active'));
+    }
+
+    function setSpeedPreset(val, btn) {
+      document.getElementById('speed-slider').value = val;
+      onSpeedSliderChange(val);
+      if (btn) btn.classList.add('active');
+      fetch('/api/config?pwm=' + val, { method: 'POST' }).catch(() => {});
     }
 
     async function pollStatus() {
@@ -876,37 +821,24 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         const res = await fetch('/api/status');
         if (!res.ok) return;
         const data = await res.json();
-        
-        document.getElementById('status-indicator').style.background = 'var(--accent-green)';
-        const text = document.getElementById('state-text');
         const badge = document.getElementById('state-badge');
-        text.textContent = data.state;
-
+        document.getElementById('state-text').textContent = data.state;
+        
         if (data.state.includes('DEPLOY')) {
-          badge.style.color = 'var(--primary)';
-          badge.style.borderColor = 'rgba(0, 240, 255, 0.4)';
-          badge.style.background = 'rgba(0, 240, 255, 0.15)';
+          badge.style.color = 'var(--pixel-red)';
         } else if (data.state.includes('RETRACT')) {
-          badge.style.color = '#60a5fa';
-          badge.style.borderColor = 'rgba(96, 165, 250, 0.4)';
-          badge.style.background = 'rgba(59, 130, 246, 0.15)';
+          badge.style.color = 'var(--pixel-blue)';
         } else if (data.state.includes('STOP')) {
-          badge.style.color = 'var(--accent-red)';
-          badge.style.borderColor = 'rgba(255, 42, 95, 0.4)';
-          badge.style.background = 'rgba(255, 42, 95, 0.15)';
+          badge.style.color = 'var(--pixel-red)';
         } else {
-          badge.style.color = 'var(--accent-green)';
-          badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-          badge.style.background = 'rgba(16, 185, 129, 0.15)';
+          badge.style.color = 'var(--pixel-green)';
         }
 
         document.getElementById('m1-badge-state').textContent = data.m1_pwm > 0 ? 'ACTIVE' : 'OFF';
-        document.getElementById('m1-badge-state').style.color = data.m1_pwm > 0 ? 'var(--primary)' : 'var(--text-dim)';
-        document.getElementById('m1-val').textContent = data.m1_pwm > 0 ? `${Math.round((data.m1_pwm/1023)*100)}% (${data.m1_pwm} PWM)` : '0% (0 PWM)';
+        document.getElementById('m1-val').textContent = data.m1_pwm > 0 ? Math.round((data.m1_pwm/1023)*100) + '% (' + data.m1_pwm + ' PWM)' : '0% (0 PWM)';
 
         document.getElementById('m2-badge-state').textContent = data.m2_pwm > 0 ? 'ACTIVE' : 'OFF';
-        document.getElementById('m2-badge-state').style.color = data.m2_pwm > 0 ? 'var(--accent-blue)' : 'var(--text-dim)';
-        document.getElementById('m2-val').textContent = data.m2_pwm > 0 ? `${Math.round((data.m2_pwm/1023)*100)}% (${data.m2_pwm} PWM)` : '0% (0 PWM)';
+        document.getElementById('m2-val').textContent = data.m2_pwm > 0 ? Math.round((data.m2_pwm/1023)*100) + '% (' + data.m2_pwm + ' PWM)' : '0% (0 PWM)';
 
         if (data.total_duration > 0 && data.remaining > 0) {
           const pct = Math.max(0, Math.min(100, ((data.total_duration - data.remaining) / data.total_duration) * 100));
@@ -914,9 +846,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         } else {
           document.getElementById('progress-bar').style.width = '0%';
         }
-      } catch (err) {
-        document.getElementById('status-indicator').style.background = 'var(--accent-red)';
-      }
+      } catch (err) {}
     }
 
     setInterval(pollStatus, 450);
