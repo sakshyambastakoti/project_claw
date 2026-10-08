@@ -1,9 +1,6 @@
-#pragma once
-#include <Arduino.h>
-
-const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,7 +8,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
   <style>
     :root {
       --bg-dark: #0a0e17;
-      --card-bg: rgba(16, 22, 36, 0.94);
+      --card-bg: rgba(16, 22, 36, 0.92);
       --card-border: rgba(56, 189, 248, 0.18);
       --primary: #00f0ff;
       --primary-glow: rgba(0, 240, 255, 0.4);
@@ -25,6 +22,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       --text-dim: #64748b;
       --border-soft: rgba(255, 255, 255, 0.08);
       --btn-bg: #1e293b;
+      --btn-hover: #334155;
       --radius-sm: 8px;
       --radius-md: 14px;
       --radius-lg: 20px;
@@ -57,6 +55,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       flex-direction: column;
     }
 
+    /* Single Full-Size Card Controller Layout (Inspired by index.html) */
     .full-controller-card {
       background: var(--card-bg);
       backdrop-filter: blur(20px);
@@ -70,6 +69,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       gap: 16px;
     }
 
+    /* Card Top Header */
     .card-header {
       display: flex;
       justify-content: space-between;
@@ -163,6 +163,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       margin: 2px 0;
     }
 
+    /* Live Telemetry Banner */
     .telemetry-banner {
       background: rgba(10, 14, 23, 0.7);
       border: 1px solid var(--border-soft);
@@ -247,6 +248,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       color: var(--text-main);
     }
 
+    /* Section 1: Main Tactile Arm Actuation Section */
     .controller-section {
       display: flex;
       flex-direction: column;
@@ -275,6 +277,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       gap: 8px;
       cursor: pointer;
       transition: all 0.15s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     .btn-action:active {
@@ -307,6 +311,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       stroke: currentColor;
     }
 
+    /* Jogging / Inching Micro-Control Row */
     .jog-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -335,6 +340,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       color: #fff;
     }
 
+    /* Auto Demo & Emergency Stop */
     .btn-demo-full {
       width: 100%;
       background: linear-gradient(145deg, #4c1d95, #6d28d9);
@@ -389,6 +395,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       50% { box-shadow: 0 0 28px rgba(255, 42, 95, 0.8); }
     }
 
+    /* Section 2: Speed Controller & Presets (Directly matching index.html) */
     .speed-section {
       display: flex;
       flex-direction: column;
@@ -442,6 +449,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       transition: transform 0.1s;
     }
 
+    .speed-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
     .speed-presets-group {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -466,6 +477,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       color: #fff;
     }
 
+    /* Section 3: Hidden / Collapsible Advanced Drawers */
     .accordion-item {
       background: rgba(0, 0, 0, 0.25);
       border: 1px solid var(--border-soft);
@@ -485,6 +497,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       letter-spacing: 0.8px;
       text-transform: uppercase;
       color: var(--text-sub);
+    }
+
+    .accordion-header:hover {
+      color: #fff;
     }
 
     .accordion-arrow {
@@ -548,6 +564,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       color: #000;
     }
 
+    /* Diagnostics Table in Drawer */
     .diag-table {
       width: 100%;
       font-size: 11px;
@@ -561,11 +578,16 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     }
 
+    .diag-table tr:last-child {
+      border-bottom: none;
+    }
+
     .diag-val {
       font-weight: 700;
       color: #fff;
     }
 
+    /* Card Footer: Firmware OTA Link (matching index.html) */
     .card-footer-ota {
       display: flex;
       justify-content: center;
@@ -588,6 +610,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       color: var(--primary);
     }
 
+    /* Toast Notification */
     .toast {
       position: fixed;
       bottom: 20px;
@@ -611,14 +634,21 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
   </style>
 </head>
+
 <body>
+
   <div class="app-viewport">
+
+    <!-- Single Full-Size Card Controller Layout (Inspired by index.html) -->
     <main class="full-controller-card">
+
+      <!-- Card Top Header -->
       <header class="card-header">
         <div class="brand-info">
           <h1>Project <span>CLAW</span></h1>
           <div class="brand-sub">by HimalixLabs &bull; Animatronics</div>
         </div>
+
         <div class="card-header-actions">
           <a href="/update" target="_blank" class="ota-btn" title="Over-The-Air Firmware Update (/update)">
             <svg class="ota-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -628,6 +658,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             </svg>
             <span>OTA</span>
           </a>
+
           <div class="status-indicator-badge" title="Controller Connection Status">
             <span class="status-dot" id="status-indicator"></span>
           </div>
@@ -636,6 +667,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       <div class="card-divider"></div>
 
+      <!-- Live Telemetry Banner -->
       <div class="telemetry-banner">
         <div class="telemetry-header">
           <span class="telemetry-tag">System Mode</span>
@@ -666,8 +698,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         </div>
       </div>
 
+      <!-- Section 1: Main Tactile Arm Actuation Section -->
       <section class="controller-section">
         <div class="action-grid">
+          <!-- Deploy Claws (Motor 1) -->
           <button class="btn-action btn-deploy" onclick="triggerCommand('deploy')" title="Deploy / Contract Claws">
             <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2v20M17 7l-5-5-5 5"/>
@@ -675,6 +709,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             <span>DEPLOY CLAWS</span>
           </button>
 
+          <!-- Retract Claws (Motor 2) -->
           <button class="btn-action btn-retract" onclick="triggerCommand('retract')" title="Retract Claws">
             <svg class="svg-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 22V2M7 17l5 5 5-5"/>
@@ -683,6 +718,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           </button>
         </div>
 
+        <!-- Inching / Tension Jogging Controls -->
         <div class="jog-row">
           <button class="btn-jog" onclick="triggerJog('deploy')" title="Nudge Motor 1 forward by 0.5s">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
@@ -694,6 +730,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           </button>
         </div>
 
+        <!-- Auto Demo Routine -->
         <button class="btn-demo-full" onclick="triggerCommand('demo')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="5 3 19 12 5 21 5 3"/>
@@ -701,6 +738,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <span>AUTO DEMO SEQUENCE</span>
         </button>
 
+        <!-- Center Emergency Stop -->
         <button class="btn-center-stop" onclick="triggerCommand('stop')" title="Instant Emergency Stop">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <rect x="5" y="5" width="14" height="14" rx="3"/>
@@ -711,6 +749,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       <div class="card-divider"></div>
 
+      <!-- Section 2: Speed Controller & Presets (Directly matching index.html) -->
       <section class="speed-section">
         <div class="speed-header-row">
           <span class="speed-label">MOTOR SPEED CONTROLLER</span>
@@ -731,7 +770,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       <div class="card-divider"></div>
 
+      <!-- Section 3: Hidden / Collapsible Drawers (Calibration & Diagnostics) -->
       <section style="display:flex; flex-direction:column; gap:10px;">
+
+        <!-- Accordion 1: Cable Timing & Travel Calibration -->
         <div class="accordion-item" id="accordion-timing">
           <div class="accordion-header" onclick="toggleAccordion('accordion-timing')">
             <span>⏱ Timing & Travel Calibration</span>
@@ -766,6 +808,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           </div>
         </div>
 
+        <!-- Accordion 2: System Telemetry & Diagnostics -->
         <div class="accordion-item" id="accordion-diagnostics">
           <div class="accordion-header" onclick="toggleAccordion('accordion-diagnostics')">
             <span>📶 Device Telemetry & Network</span>
@@ -796,10 +839,12 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             </table>
           </div>
         </div>
+
       </section>
 
       <div class="card-divider"></div>
 
+      <!-- Card Footer: Firmware OTA Link (matching index.html) -->
       <footer class="card-footer-ota">
         <a href="/update" target="_blank" class="ota-footer-link">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -810,29 +855,42 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           FIRMWARE OTA UPDATE ⚡
         </a>
       </footer>
+
     </main>
+
   </div>
 
   <div class="toast" id="toast-msg">Settings Applied!</div>
 
   <script>
+    // System Local State Simulation for standalone preview.html
+    let state = 'IDLE';
     let targetPwm = 850;
+    let deployDuration = 3000;
+    let retractDuration = 3000;
+    let holdDuration = 2000;
+    let remainingMs = 0;
+    let totalDurationMs = 0;
+    let simTimer = null;
 
     function showToast(text) {
       const toast = document.getElementById('toast-msg');
       toast.textContent = text;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
+      setTimeout(() => toast.classList.remove('show'), 2200);
     }
 
     function toggleAccordion(id) {
-      document.getElementById(id).classList.toggle('open');
+      const item = document.getElementById(id);
+      item.classList.toggle('open');
     }
 
     function onSpeedSliderChange(val) {
       targetPwm = parseInt(val);
       const pct = Math.round((targetPwm / 1023) * 100);
       document.getElementById('speed-val-display').textContent = `${pct}% (${targetPwm} PWM)`;
+
+      // Deselect preset buttons
       document.querySelectorAll('.btn-speed-step').forEach(btn => btn.classList.remove('active'));
     }
 
@@ -841,86 +899,142 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       onSpeedSliderChange(val);
       document.querySelectorAll('.btn-speed-step').forEach(btn => btn.classList.remove('active'));
       if (btnElement) btnElement.classList.add('active');
+
+      // Attempt live sync if connected to real controller
       fetch(`/api/config?pwm=${val}`, { method: 'POST' }).catch(() => {});
     }
 
     function saveCalibration() {
-      const deploy = document.getElementById('deploy-slider').value;
-      const retract = document.getElementById('retract-slider').value;
-      fetch(`/api/config?pwm=${targetPwm}&deploy=${deploy}&retract=${retract}`, { method: 'POST' })
-        .then(() => showToast('Calibration Saved!'))
-        .catch(() => showToast('Failed to save'));
+      deployDuration = parseInt(document.getElementById('deploy-slider').value);
+      retractDuration = parseInt(document.getElementById('retract-slider').value);
+      holdDuration = parseInt(document.getElementById('hold-slider').value);
+
+      fetch(`/api/config?pwm=${targetPwm}&deploy=${deployDuration}&retract=${retractDuration}`, { method: 'POST' })
+        .then(() => showToast('Calibration Saved to ESP8266!'))
+        .catch(() => showToast('Saved Locally (Preview Mode)'));
     }
 
     function triggerJog(dir) {
-      const endpoint = dir === 'deploy' ? '/api/deploy' : '/api/retract';
-      fetch(endpoint, { method: 'POST' }).then(() => {
-        showToast(`Jogging ${dir.toUpperCase()} (0.5s)`);
-        setTimeout(() => fetch('/api/stop', { method: 'POST' }), 500);
-      });
+      const jogTime = 500;
+      if (dir === 'deploy') {
+        startMotionSimulation('DEPLOYING', jogTime, () => updateUIState('IDLE', 0, 0));
+        fetch('/api/deploy', { method: 'POST' }).catch(() => {});
+        setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => {}), jogTime);
+      } else {
+        startMotionSimulation('RETRACTING', jogTime, () => updateUIState('IDLE', 0, 0));
+        fetch('/api/retract', { method: 'POST' }).catch(() => {});
+        setTimeout(() => fetch('/api/stop', { method: 'POST' }).catch(() => {}), jogTime);
+      }
+      showToast(`Jogging ${dir.toUpperCase()} (0.5s)`);
     }
 
     function triggerCommand(cmd) {
-      fetch('/api/' + cmd, { method: 'POST' })
-        .then(() => {
-          if (cmd === 'stop') showToast('EMERGENCY STOPPED');
-          else if (cmd === 'deploy') showToast('Deploying Claws...');
-          else if (cmd === 'retract') showToast('Retracting Claws...');
-          else if (cmd === 'demo') showToast('Demo Running...');
-          pollStatus();
+      if (cmd === 'stop') {
+        clearInterval(simTimer);
+        updateUIState('STOPPED', 0, 0);
+        showToast('EMERGENCY STOPPED');
+        fetch('/api/stop', { method: 'POST' }).catch(() => {});
+        return;
+      }
+
+      if (cmd === 'deploy') {
+        fetch('/api/deploy', { method: 'POST' }).catch(() => {});
+        startMotionSimulation('DEPLOYING', deployDuration, () => updateUIState('DEPLOYED', 0, 0));
+        showToast('Deploying Claws...');
+      } else if (cmd === 'retract') {
+        fetch('/api/retract', { method: 'POST' }).catch(() => {});
+        startMotionSimulation('RETRACTING', retractDuration, () => updateUIState('RETRACTED', 0, 0));
+        showToast('Retracting Claws...');
+      } else if (cmd === 'demo') {
+        fetch('/api/demo', { method: 'POST' }).catch(() => {});
+        showToast('Running Full Demo Routine...');
+        startMotionSimulation('DEMO (DEPLOYING)', deployDuration, () => {
+          updateUIState('DEMO (HOLDING)', 0, 0);
+          setTimeout(() => {
+            startMotionSimulation('DEMO (RETRACTING)', retractDuration, () => {
+              updateUIState('IDLE / READY', 0, 0);
+              showToast('Demo Sequence Complete!');
+            });
+          }, holdDuration);
         });
+      }
     }
 
-    async function pollStatus() {
+    function startMotionSimulation(stateName, duration, onComplete) {
+      clearInterval(simTimer);
+      state = stateName;
+      totalDurationMs = duration;
+      remainingMs = duration;
+
+      const isMotor1 = stateName.includes('DEPLOY');
+      const isMotor2 = stateName.includes('RETRACT');
+
+      const m1Pwm = isMotor1 ? targetPwm : 0;
+      const m2Pwm = isMotor2 ? targetPwm : 0;
+      updateUIState(stateName, m1Pwm, m2Pwm);
+
+      const stepInterval = 50;
+      simTimer = setInterval(() => {
+        remainingMs -= stepInterval;
+        if (remainingMs <= 0) {
+          clearInterval(simTimer);
+          document.getElementById('progress-bar').style.width = '0%';
+          if (onComplete) onComplete();
+        } else {
+          const pct = ((totalDurationMs - remainingMs) / totalDurationMs) * 100;
+          document.getElementById('progress-bar').style.width = `${pct}%`;
+        }
+      }, stepInterval);
+    }
+
+    function updateUIState(stateName, m1, m2) {
+      const badge = document.getElementById('state-badge');
+      const text = document.getElementById('state-text');
+      text.textContent = stateName;
+
+      if (stateName.includes('DEPLOY')) {
+        badge.style.color = 'var(--primary)';
+        badge.style.borderColor = 'rgba(0, 240, 255, 0.4)';
+        badge.style.background = 'rgba(0, 240, 255, 0.15)';
+      } else if (stateName.includes('RETRACT')) {
+        badge.style.color = '#60a5fa';
+        badge.style.borderColor = 'rgba(96, 165, 250, 0.4)';
+        badge.style.background = 'rgba(59, 130, 246, 0.15)';
+      } else if (stateName.includes('STOP')) {
+        badge.style.color = 'var(--accent-red)';
+        badge.style.borderColor = 'rgba(255, 42, 95, 0.4)';
+        badge.style.background = 'rgba(255, 42, 95, 0.15)';
+      } else {
+        badge.style.color = 'var(--accent-green)';
+        badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        badge.style.background = 'rgba(16, 185, 129, 0.15)';
+      }
+
+      // Motor Readouts
+      document.getElementById('m1-badge-state').textContent = m1 > 0 ? 'ACTIVE' : 'OFF';
+      document.getElementById('m1-badge-state').style.color = m1 > 0 ? 'var(--primary)' : 'var(--text-dim)';
+      document.getElementById('m1-val').textContent = m1 > 0 ? `${Math.round((m1/1023)*100)}% (${m1} PWM)` : '0% (0 PWM)';
+
+      document.getElementById('m2-badge-state').textContent = m2 > 0 ? 'ACTIVE' : 'OFF';
+      document.getElementById('m2-badge-state').style.color = m2 > 0 ? 'var(--accent-blue)' : 'var(--text-dim)';
+      document.getElementById('m2-val').textContent = m2 > 0 ? `${Math.round((m2/1023)*100)}% (${m2} PWM)` : '0% (0 PWM)';
+    }
+
+    // Live Polling when connected to real ESP8266
+    async function liveSync() {
       try {
         const res = await fetch('/api/status');
         if (!res.ok) return;
         const data = await res.json();
-        
         document.getElementById('status-indicator').style.background = 'var(--accent-green)';
-        const text = document.getElementById('state-text');
-        const badge = document.getElementById('state-badge');
-        text.textContent = data.state;
-
-        if (data.state.includes('DEPLOY')) {
-          badge.style.color = 'var(--primary)';
-          badge.style.borderColor = 'rgba(0, 240, 255, 0.4)';
-          badge.style.background = 'rgba(0, 240, 255, 0.15)';
-        } else if (data.state.includes('RETRACT')) {
-          badge.style.color = '#60a5fa';
-          badge.style.borderColor = 'rgba(96, 165, 250, 0.4)';
-          badge.style.background = 'rgba(59, 130, 246, 0.15)';
-        } else if (data.state.includes('STOP')) {
-          badge.style.color = 'var(--accent-red)';
-          badge.style.borderColor = 'rgba(255, 42, 95, 0.4)';
-          badge.style.background = 'rgba(255, 42, 95, 0.15)';
-        } else {
-          badge.style.color = 'var(--accent-green)';
-          badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-          badge.style.background = 'rgba(16, 185, 129, 0.15)';
-        }
-
-        document.getElementById('m1-badge-state').textContent = data.m1_pwm > 0 ? 'ACTIVE' : 'OFF';
-        document.getElementById('m1-badge-state').style.color = data.m1_pwm > 0 ? 'var(--primary)' : 'var(--text-dim)';
-        document.getElementById('m1-val').textContent = data.m1_pwm > 0 ? `${Math.round((data.m1_pwm/1023)*100)}% (${data.m1_pwm} PWM)` : '0% (0 PWM)';
-
-        document.getElementById('m2-badge-state').textContent = data.m2_pwm > 0 ? 'ACTIVE' : 'OFF';
-        document.getElementById('m2-badge-state').style.color = data.m2_pwm > 0 ? 'var(--accent-blue)' : 'var(--text-dim)';
-        document.getElementById('m2-val').textContent = data.m2_pwm > 0 ? `${Math.round((data.m2_pwm/1023)*100)}% (${data.m2_pwm} PWM)` : '0% (0 PWM)';
-
-        if (data.total_duration > 0 && data.remaining > 0) {
-          const pct = Math.max(0, Math.min(100, ((data.total_duration - data.remaining) / data.total_duration) * 100));
-          document.getElementById('progress-bar').style.width = pct + '%';
-        } else {
-          document.getElementById('progress-bar').style.width = '0%';
-        }
+        updateUIState(data.state, data.m1_pwm, data.m2_pwm);
       } catch (err) {
-        document.getElementById('status-indicator').style.background = 'var(--accent-red)';
+        // In local preview without ESP8266, remains connected indicator
       }
     }
 
-    setInterval(pollStatus, 450);
+    setInterval(liveSync, 500);
   </script>
 </body>
+
 </html>
-)rawliteral";
