@@ -3,6 +3,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266HTTPUpdateServer.h>
+#include <Hawa.h>
 #include "config.h"
 #include "web_page.h"
 
@@ -116,6 +117,8 @@ void startDeploy() {
 
   setMotor1(1, motorSpeedPwm); // Motor 1 pulls Red cable
   Serial.printf("[CLAW] Started Deploy (Duration: %u ms, PWM: %d)\n", activeDuration, motorSpeedPwm);
+  Hawa.log("[CLAW] Deploy started (PWM: " + String(motorSpeedPwm) + ")");
+  Hawa.sendData("state", "DEPLOYING");
 }
 
 void startRetract() {
@@ -128,6 +131,8 @@ void startRetract() {
 
   setMotor2(1, motorSpeedPwm); // Motor 2 pulls Blue cable
   Serial.printf("[CLAW] Started Retract (Duration: %u ms, PWM: %d)\n", activeDuration, motorSpeedPwm);
+  Hawa.log("[CLAW] Retract started (PWM: " + String(motorSpeedPwm) + ")");
+  Hawa.sendData("state", "RETRACTING");
 }
 
 void startDemo() {
@@ -140,6 +145,8 @@ void startDemo() {
 
   setMotor1(1, motorSpeedPwm);
   Serial.printf("[CLAW] Started Full Demo Sequence\n");
+  Hawa.log("[CLAW] Auto Demo sequence initiated");
+  Hawa.sendData("state", "DEMO_DEPLOYING");
 }
 
 void triggerEmergencyStop() {
@@ -147,6 +154,8 @@ void triggerEmergencyStop() {
   currentState = STATE_EMERGENCY_STOP;
   activeDuration = 0;
   Serial.println("[CLAW] *** EMERGENCY STOP TRIGGERED ***");
+  Hawa.log("[CLAW] *** EMERGENCY STOP TRIGGERED ***");
+  Hawa.sendData("state", "EMERGENCY_STOP");
 }
 
 // Return human-readable state string
@@ -179,6 +188,8 @@ void updateStateMachine() {
         currentState = STATE_DEPLOYED;
         activeDuration = 0;
         Serial.println("[CLAW] Deploy cycle finished.");
+        Hawa.log("[CLAW] Deploy completed");
+        Hawa.sendData("state", "DEPLOYED");
       }
       break;
 
@@ -188,6 +199,8 @@ void updateStateMachine() {
         currentState = STATE_RETRACTED;
         activeDuration = 0;
         Serial.println("[CLAW] Retract cycle finished.");
+        Hawa.log("[CLAW] Retract completed");
+        Hawa.sendData("state", "RETRACTED");
       }
       break;
 
@@ -198,6 +211,7 @@ void updateStateMachine() {
         motionStartTime = millis();
         activeDuration = demoHoldMs;
         Serial.printf("[CLAW] Demo: Holding claws open for %u ms...\n", demoHoldMs);
+        Hawa.sendData("state", "DEMO_HOLDING");
       }
       break;
 
@@ -208,6 +222,7 @@ void updateStateMachine() {
         activeDuration = retractTimeMs;
         setMotor2(1, motorSpeedPwm);
         Serial.println("[CLAW] Demo: Retracting claws...");
+        Hawa.sendData("state", "DEMO_RETRACTING");
       }
       break;
 
@@ -217,6 +232,8 @@ void updateStateMachine() {
         currentState = STATE_IDLE;
         activeDuration = 0;
         Serial.println("[CLAW] Demo sequence complete. Ready.");
+        Hawa.log("[CLAW] Demo sequence completed");
+        Hawa.sendData("state", "IDLE");
       }
       break;
 
@@ -243,13 +260,26 @@ void handleStatus() {
   uint32_t elapsed = (activeDuration > 0) ? (now - motionStartTime) : 0;
   uint32_t remaining = (elapsed < activeDuration) ? (activeDuration - elapsed) : 0;
 
+  bool isWifiConnected = (WiFi.status() == WL_CONNECTED);
+
   String json = "{";
   json += "\"state\":\"" + getStateString() + "\",";
   json += "\"m1_pwm\":" + String(currentM1Pwm) + ",";
   json += "\"m2_pwm\":" + String(currentM2Pwm) + ",";
   json += "\"target_pwm\":" + String(motorSpeedPwm) + ",";
   json += "\"total_duration\":" + String(activeDuration) + ",";
-  json += "\"remaining\":" + String(remaining);
+  json += "\"remaining\":" + String(remaining) + ",";
+  // Wi-Fi and Hawa Wireless Status
+  json += "\"wifi_connected\":" + String(isWifiConnected ? "true" : "false") + ",";
+  json += "\"wifi_ssid\":\"" + (isWifiConnected ? WiFi.SSID() : Hawa.getSsid()) + "\",";
+  json += "\"station_ip\":\"" + (isWifiConnected ? WiFi.localIP().toString() : "") + "\",";
+  json += "\"ap_ip\":\"" + WiFi.softAPIP().toString() + "\",";
+  json += "\"rssi\":" + String(isWifiConnected ? WiFi.RSSI() : 0) + ",";
+  json += "\"hawa_connected\":" + String(Hawa.isConnected() ? "true" : "false") + ",";
+  json += "\"hawa_device_id\":\"" + Hawa.getDeviceId() + "\",";
+  json += "\"hawa_server\":\"" + Hawa.getServerUrl() + "\",";
+  json += "\"hawa_device_name\":\"" + Hawa.getDeviceName() + "\",";
+  json += "\"hawa_ota_running\":" + String(Hawa.isOtaRunning() ? "true" : "false");
   json += "}";
 
   server.sendHeader("Access-Control-Allow-Origin", "*");
@@ -289,6 +319,77 @@ void handleConfig() {
   server.send(200, "text/plain", "CONFIG_UPDATED");
 }
 
+// Wi-Fi Network Scan
+void handleWifiScan() {
+  int n = WiFi.scanNetworks(false, false); // synchronous scan for immediate response
+  String json = "[";
+  for (int i = 0; i < n; ++i) {
+    if (i > 0) json += ",";
+    json += "{";
+    json += "\"ssid\":\"" + WiFi.SSID(i) + "\",";
+    json += "\"rssi\":" + String(WiFi.RSSI(i)) + ",";
+    json += "\"secure\":" + String(WiFi.encryptionType(i) == ENC_TYPE_NONE ? "false" : "true");
+    json += "}";
+  }
+  json += "]";
+  WiFi.scanDelete();
+
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "application/json", json);
+}
+
+// Wi-Fi Credentials Provisioning from Web Page
+void handleWifiSave() {
+  String ssid = server.hasArg("ssid") ? server.arg("ssid") : "";
+  String pass = server.hasArg("password") ? server.arg("password") : "";
+  String serverUrl = server.hasArg("server") ? server.arg("server") : "";
+  String devName = server.hasArg("name") ? server.arg("name") : "";
+
+  ssid.trim();
+  pass.trim();
+  serverUrl.trim();
+  devName.trim();
+
+  if (ssid.length() == 0) {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(400, "application/json", "{\"status\":\"error\",\"message\":\"Wi-Fi SSID is required\"}");
+    return;
+  }
+
+  Serial.printf("[WiFi] Provisioning request from Web Page -> SSID: %s\n", ssid.c_str());
+
+  // Save to persistent storage through Hawa
+  Hawa.saveCredentials(ssid, pass, serverUrl, devName);
+
+  // Attempt connection in background while keeping AP intact
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.begin(ssid.c_str(), pass.c_str());
+
+  Hawa.log("[WIFI] New credentials saved from Web Dashboard for SSID: " + ssid);
+
+  String resp = "{\"status\":\"ok\",\"message\":\"Wi-Fi settings saved. Connecting to " + ssid + "...\"}";
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "application/json", resp);
+}
+
+// Clear Saved Wi-Fi Credentials
+void handleWifiClear() {
+  Hawa.clearCredentials();
+  WiFi.disconnect();
+  Serial.println("[WiFi] Credentials wiped via Web Page request.");
+
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "application/json", "{\"status\":\"ok\",\"message\":\"Wi-Fi credentials cleared. Device running in AP mode.\"}");
+}
+
+// Remote Reboot Handler
+void handleReboot() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "application/json", "{\"status\":\"ok\",\"message\":\"Rebooting hardware...\"}");
+  delay(500);
+  ESP.restart();
+}
+
 // ==========================================
 // Setup & Main Loop
 // ==========================================
@@ -313,15 +414,36 @@ void setup() {
   // Ensure motors start completely stopped
   stopAllMotors();
 
-  // Initialize Wi-Fi Access Point
-  WiFi.mode(WIFI_AP);
+  // Initialize Dual AP + STA Wi-Fi Mode so local AP is always available
+  WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASSWORD);
 
-  IPAddress myIP = WiFi.softAPIP();
+  IPAddress apIP = WiFi.softAPIP();
   Serial.print("[WiFi] Access Point Created! SSID: ");
   Serial.println(WIFI_AP_SSID);
   Serial.print("[WiFi] AP IP Address: ");
-  Serial.println(myIP);
+  Serial.println(apIP);
+
+  // Initialize Hawa Universal IoT & OTA Agent
+  Hawa.begin();
+
+  // Register remote Hawa Cloud commands
+  Hawa.onCommand("deploy", [](const String& val) {
+    Hawa.log("[HAWA CMD] Deploy requested from cloud");
+    startDeploy();
+  });
+  Hawa.onCommand("retract", [](const String& val) {
+    Hawa.log("[HAWA CMD] Retract requested from cloud");
+    startRetract();
+  });
+  Hawa.onCommand("stop", [](const String& val) {
+    Hawa.log("[HAWA CMD] Emergency stop requested from cloud");
+    triggerEmergencyStop();
+  });
+  Hawa.onCommand("demo", [](const String& val) {
+    Hawa.log("[HAWA CMD] Auto demo requested from cloud");
+    startDemo();
+  });
 
   // Start mDNS responder
   if (MDNS.begin(MDNS_HOSTNAME)) {
@@ -338,6 +460,12 @@ void setup() {
   server.on("/api/stop", HTTP_POST, handleStop);
   server.on("/api/config", HTTP_POST, handleConfig);
 
+  // Wi-Fi Provisioning & Hawa Cloud API Endpoints
+  server.on("/api/wifi-scan", HTTP_GET, handleWifiScan);
+  server.on("/api/wifi-save", HTTP_POST, handleWifiSave);
+  server.on("/api/wifi-clear", HTTP_POST, handleWifiClear);
+  server.on("/api/reboot", HTTP_POST, handleReboot);
+
   // Setup Web OTA Firmware Update at /update
   httpUpdater.setup(&server, "/update");
 
@@ -350,6 +478,9 @@ void loop() {
   // Handle HTTP client requests
   server.handleClient();
   MDNS.update();
+
+  // Handle Hawa IoT WebSocket, Heartbeats, and Wireless OTA
+  Hawa.loop();
 
   // Run non-blocking motion state machine
   updateStateMachine();
