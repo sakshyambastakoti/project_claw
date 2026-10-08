@@ -153,48 +153,87 @@ function startMotionSimulation(stateName, duration, onComplete) {
   const stepMs = 50;
   motionTimer = setInterval(() => {
     remainingMs -= stepMs;
+    const pBar = document.getElementById('progress-bar');
     if (remainingMs <= 0) {
       clearInterval(motionTimer);
-      document.getElementById('progress-bar').style.width = '0%';
+      if (pBar) pBar.style.width = '0%';
       if (onComplete) onComplete();
     } else {
-      const pct = ((totalDurationMs - remainingMs) / totalDurationMs) * 100;
-      document.getElementById('progress-bar').style.width = `${pct}%`;
+      if (pBar) {
+        const pct = ((totalDurationMs - remainingMs) / totalDurationMs) * 100;
+        pBar.style.width = `${pct}%`;
+      }
     }
   }, stepMs);
 }
 
 function updateUIState(stateName, m1, m2) {
-  const badge = document.getElementById('state-badge');
-  const text = document.getElementById('state-text');
-  text.textContent = stateName;
-
-  if (stateName.includes('DEPLOY')) {
-    badge.style.color = 'var(--pixel-red)';
-    badge.style.borderColor = 'var(--pixel-red)';
-    badge.style.background = 'rgba(225, 29, 72, 0.1)';
-  } else if (stateName.includes('RETRACT')) {
-    badge.style.color = 'var(--pixel-blue)';
-    badge.style.borderColor = 'var(--pixel-blue)';
-    badge.style.background = 'rgba(37, 99, 235, 0.1)';
-  } else if (stateName.includes('STOP')) {
-    badge.style.color = 'var(--pixel-red)';
-    badge.style.borderColor = 'var(--pixel-red)';
-    badge.style.background = 'rgba(225, 29, 72, 0.15)';
-  } else {
-    badge.style.color = 'var(--pixel-green)';
-    badge.style.borderColor = 'var(--pixel-green)';
-    badge.style.background = 'rgba(16, 185, 129, 0.1)';
+  const pill = document.getElementById('status-pill');
+  if (pill) {
+    pill.textContent = stateName;
+    if (stateName.includes('DEPLOY')) {
+      pill.style.color = 'var(--pixel-red)';
+      pill.style.borderColor = 'rgba(225, 29, 72, 0.4)';
+      pill.style.background = 'rgba(225, 29, 72, 0.12)';
+    } else if (stateName.includes('RETRACT')) {
+      pill.style.color = 'var(--pixel-blue)';
+      pill.style.borderColor = 'rgba(37, 99, 235, 0.4)';
+      pill.style.background = 'rgba(37, 99, 235, 0.12)';
+    } else if (stateName.includes('STOP')) {
+      pill.style.color = 'var(--pixel-red)';
+      pill.style.borderColor = 'var(--pixel-red)';
+      pill.style.background = 'rgba(225, 29, 72, 0.2)';
+    } else {
+      pill.style.color = 'var(--pixel-green)';
+      pill.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      pill.style.background = 'rgba(16, 185, 129, 0.12)';
+    }
   }
 
-  // Motor Readouts
-  document.getElementById('m1-badge-state').textContent = m1 > 0 ? 'ACTIVE' : 'OFF';
-  document.getElementById('m1-badge-state').style.color = m1 > 0 ? 'var(--pixel-red)' : 'var(--text-dim)';
-  document.getElementById('m1-val').textContent = m1 > 0 ? `${Math.round((m1 / 1023) * 100)}% (${m1} PWM)` : '0% (0 PWM)';
+  const badge = document.getElementById('state-badge');
+  const text = document.getElementById('state-text');
+  if (text) text.textContent = stateName;
 
-  document.getElementById('m2-badge-state').textContent = m2 > 0 ? 'ACTIVE' : 'OFF';
-  document.getElementById('m2-badge-state').style.color = m2 > 0 ? 'var(--pixel-blue)' : 'var(--text-dim)';
-  document.getElementById('m2-val').textContent = m2 > 0 ? `${Math.round((m2 / 1023) * 100)}% (${m2} PWM)` : '0% (0 PWM)';
+  if (badge) {
+    if (stateName.includes('DEPLOY')) {
+      badge.style.color = 'var(--pixel-red)';
+      badge.style.borderColor = 'var(--pixel-red)';
+      badge.style.background = 'rgba(225, 29, 72, 0.1)';
+    } else if (stateName.includes('RETRACT')) {
+      badge.style.color = 'var(--pixel-blue)';
+      badge.style.borderColor = 'var(--pixel-blue)';
+      badge.style.background = 'rgba(37, 99, 235, 0.1)';
+    } else if (stateName.includes('STOP')) {
+      badge.style.color = 'var(--pixel-red)';
+      badge.style.borderColor = 'var(--pixel-red)';
+      badge.style.background = 'rgba(225, 29, 72, 0.15)';
+    } else {
+      badge.style.color = 'var(--pixel-green)';
+      badge.style.borderColor = 'var(--pixel-green)';
+      badge.style.background = 'rgba(16, 185, 129, 0.1)';
+    }
+  }
+
+  // Optional Motor Readouts (null-checked)
+  const m1State = document.getElementById('m1-badge-state');
+  const m1Val = document.getElementById('m1-val');
+  if (m1State) {
+    m1State.textContent = m1 > 0 ? 'ACTIVE' : 'OFF';
+    m1State.style.color = m1 > 0 ? 'var(--pixel-red)' : 'var(--text-dim)';
+  }
+  if (m1Val) {
+    m1Val.textContent = m1 > 0 ? `${Math.round((m1 / 1023) * 100)}% (${m1} PWM)` : '0% (0 PWM)';
+  }
+
+  const m2State = document.getElementById('m2-badge-state');
+  const m2Val = document.getElementById('m2-val');
+  if (m2State) {
+    m2State.textContent = m2 > 0 ? 'ACTIVE' : 'OFF';
+    m2State.style.color = m2 > 0 ? 'var(--pixel-blue)' : 'var(--text-dim)';
+  }
+  if (m2Val) {
+    m2Val.textContent = m2 > 0 ? `${Math.round((m2 / 1023) * 100)}% (${m2} PWM)` : '0% (0 PWM)';
+  }
 }
 
 // ==========================================

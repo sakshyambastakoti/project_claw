@@ -3,8 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>HAWA — Project CLAW Controller & Web Flasher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Himalix Projects — Project CLAW Controller</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -13,265 +13,114 @@
 
 <body>
 
-  <!-- Top Navigation Bar (Matching Reference) -->
-  <header class="navbar">
-    <a href="#" class="nav-brand" title="HAWA / Project CLAW Animatronics">
-      <div class="brand-icon-box">
-        <!-- HAWA / CLAW Logo Mark with Aerodynamic Waves -->
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <path d="M4 8h16M4 12h12M4 16h16" />
-        </svg>
-      </div>
-      <span class="brand-title">HAWA</span>
-    </a>
+  <div class="mobile-app-container">
 
-    <nav class="nav-links">
-      <a class="nav-link active" onclick="selectMode('ota')">WEB FLASHER</a>
-      <a class="nav-link" onclick="selectMode('tactile')">FEATURES</a>
-      <a class="nav-link" onclick="selectMode('tactile')">CONTROLLER</a>
-      <a class="nav-link" onclick="selectMode('command')">DOCS</a>
-    </nav>
-
-    <div class="nav-actions">
-      <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
-        <span id="theme-toggle-label">&amp; DARK</span>
-      </button>
-
-      <button class="btn-command-center" onclick="selectMode('command')" title="System Architecture & Diagnostics">
-        COMMAND CENTER
-      </button>
-
-      <button class="btn-connect-device" id="device-connect-btn" onclick="connectWebSerial()" title="Direct Native USB Web Serial Connection">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-        CONNECT DEVICE
-      </button>
-    </div>
-  </header>
-
-  <!-- Hero Section (Matching Reference Dot-Matrix Title & Copy) -->
-  <main class="hero-container">
-
-    <div class="hero-tag-badge">
-      ZERO DRIVERS NEEDED &bull; NATIVE WEB SERIAL
-    </div>
-
-    <!-- The Dot-Matrix Typography Headline -->
-    <h1 class="hero-title">
-      TRANSFORM YOUR<br>
-      HARDWARE INTO<br>
-      A GLOBAL WIRELESS<br>
-      FLEET
-    </h1>
-
-    <p class="hero-subtitle">
-      Zero software, Arduino IDE, or driver installations needed. Plug your ESP32 or ESP8266
-      into your browser via USB, enter your Wi-Fi credentials, and unlock frictionless over-the-air
-      programming anywhere in the world.
-    </p>
-
-    <!-- Call-To-Action Button Row -->
-    <div class="hero-cta-group">
-      <button class="btn-hero-primary" onclick="connectWebSerial()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-        CONNECT USB &amp; FLASH
-      </button>
-
-      <button class="btn-hero-secondary" onclick="selectMode('tactile')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <polygon points="5 3 19 12 5 21 5 3" />
-        </svg>
-        OPEN FLEET DASHBOARD
-      </button>
-    </div>
-
-    <!-- Feature Bullets with Red Square Dots -->
-    <div class="hero-bullets-row">
-      <div class="hero-bullet-item">
-        <span class="bullet-red-square"></span>
-        <span>ZERO DRIVER INSTALLATION</span>
-      </div>
-      <div class="hero-bullet-item">
-        <span class="bullet-red-square"></span>
-        <span>NATIVE WEB SERIAL API</span>
-      </div>
-      <div class="hero-bullet-item">
-        <span class="bullet-red-square"></span>
-        <span>ANTI-BRICK DUAL PARTITION</span>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- Workbench Window Card (Exact match to reference image bottom card) -->
-  <section class="workbench-container">
-    <div class="workbench-card" id="workbench-card">
+    <!-- Workbench Card Controller Window -->
+    <main class="workbench-card" id="workbench-card">
 
       <!-- Workbench Titlebar -->
-      <div class="workbench-titlebar">
+      <header class="workbench-titlebar">
         <div class="titlebar-left">
           <div class="window-dots">
             <span class="window-square-dot dot-red"></span>
             <span class="window-square-dot dot-amber"></span>
             <span class="window-square-dot dot-green"></span>
           </div>
-          <span class="window-title">HAWA WEB FLASHER &bull; FIRMWARE WORKBENCH</span>
+          <span class="window-title">HIMALIX PROJECTS</span>
         </div>
 
-        <button class="btn-expand-window" onclick="toggleExpandWindow()" title="Expand or Restore Card Window">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="15 3 21 3 21 9" />
-            <polyline points="9 21 3 21 3 15" />
-            <line x1="21" y1="3" x2="14" y2="10" />
-            <line x1="3" y1="21" x2="10" y2="14" />
-          </svg>
-          <span id="expand-btn-text">EXPAND WINDOW</span>
-        </button>
-      </div>
+        <div class="titlebar-actions">
+          <span class="status-pill" id="status-pill">READY</span>
+          <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
+            <span id="theme-toggle-label">&amp; DARK</span>
+          </button>
+        </div>
+      </header>
 
       <!-- Workbench Interior Content -->
       <div class="workbench-content">
 
-        <!-- Top Mode Selector Grid (Active Card 1 + Card 2 + Card 3) -->
-        <div class="mode-selector-grid">
+        <!-- Top 3 Mode Selection Cards -->
+        <div class="mode-selector-row">
 
-          <!-- Option 1: HAWA OTA Platform (Active with bold black border & red square) -->
+          <!-- Option 1: Himalix OTA (Active) -->
           <div class="mode-card active" id="mode-card-ota" onclick="selectMode('ota')">
             <div class="mode-icon-box">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
                 <path d="M4 8h16M4 12h12M4 16h16" />
               </svg>
             </div>
-            <div class="mode-card-text">
-              <div class="mode-card-title">HAWA OTA PLATFORM</div>
-              <div class="mode-card-desc">Zero-config Wi-Fi provisioning &amp; remote OTA links</div>
-            </div>
+            <div class="mode-card-title">HIMALIX OTA</div>
             <span class="mode-active-indicator"></span>
           </div>
 
           <!-- Option 2: Custom Firmware (.BIN) Flasher -->
           <div class="mode-card" id="mode-card-firmware" onclick="selectMode('firmware')">
             <div class="mode-icon-box">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="17 8 12 3 7 8"></polyline>
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
             </div>
-            <div class="mode-card-text">
-              <div class="mode-card-title">CUSTOM FIRMWARE (.BIN)</div>
-              <div class="mode-card-desc">Flash your own compiled binary from Arduino or PlatformIO</div>
-            </div>
+            <div class="mode-card-title">CUSTOM (.BIN)</div>
           </div>
 
-          <!-- Option 3: Tactile Arm & Claw Controller -->
+          <!-- Option 3: Tactile Claw Actuator -->
           <div class="mode-card" id="mode-card-tactile" onclick="selectMode('tactile')">
             <div class="mode-icon-box">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
               </svg>
             </div>
-            <div class="mode-card-text">
-              <div class="mode-card-title">TACTILE CLAW ACTUATOR</div>
-              <div class="mode-card-desc">Dual BTS7960 cable motion control &amp; live telemetry</div>
-            </div>
+            <div class="mode-card-title">TACTILE CLAW</div>
           </div>
 
         </div>
 
         <!-- ========================================================
-             Panel 1: OTA Platform & Quick Actions
+             Main Actuation Controls
              ======================================================== -->
         <div class="workbench-panel active" id="panel-ota">
 
-          <!-- Telemetry Banner -->
-          <div class="telemetry-banner">
-            <div class="telemetry-header">
-              <span class="telemetry-tag">System Mode &bull; Dual Cable State</span>
-              <div class="state-badge" id="state-badge">
-                <span id="state-text">IDLE / READY</span>
-              </div>
-            </div>
-
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" id="progress-bar"></div>
-            </div>
-
-            <div class="motor-telemetry-grid">
-              <div class="motor-stat-card">
-                <div class="motor-stat-label">
-                  <span>Motor 1 (Contract / Deploy)</span>
-                  <span id="m1-badge-state">OFF</span>
-                </div>
-                <div class="motor-stat-val" id="m1-val">0% (0 PWM)</div>
-              </div>
-
-              <div class="motor-stat-card">
-                <div class="motor-stat-label">
-                  <span>Motor 2 (Retract Cable)</span>
-                  <span id="m2-badge-state">OFF</span>
-                </div>
-                <div class="motor-stat-val" id="m2-val">0% (0 PWM)</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tactile Motion Buttons -->
+          <!-- Tactile Motion Buttons: Deploy & Retract -->
           <div class="tactile-actions-grid">
-            <button class="btn-tactile btn-tactile-deploy" onclick="triggerCommand('deploy')" title="Deploy / Contract Claws (Motor 1 Red Cable)">
+            <button class="btn-tactile btn-tactile-deploy" onclick="triggerCommand('deploy')" title="Deploy Claws">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <path d="M12 2v20M17 7l-5-5-5 5" />
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
               </svg>
-              <span>DEPLOY CLAWS (MOTOR 1)</span>
+              <span>DEPLOY CLAWS</span>
             </button>
 
-            <button class="btn-tactile btn-tactile-retract" onclick="triggerCommand('retract')" title="Retract Claws (Motor 2 Blue Cable)">
+            <button class="btn-tactile btn-tactile-retract" onclick="triggerCommand('retract')" title="Retract Claws">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <path d="M12 22V2M7 17l5 5 5-5" />
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
               </svg>
-              <span>RETRACT CLAWS (MOTOR 2)</span>
-            </button>
-          </div>
-
-          <!-- Micro Jogging Controls -->
-          <div class="jog-buttons-row">
-            <button class="btn-jog" onclick="triggerJog('deploy')" title="Nudge Motor 1 forward by 0.5s">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="18 15 12 9 6 15" />
-              </svg>
-              <span>JOG CONTRACT (0.5s)</span>
-            </button>
-            <button class="btn-jog" onclick="triggerJog('retract')" title="Nudge Motor 2 forward by 0.5s">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-              <span>JOG RETRACT (0.5s)</span>
+              <span>RETRACT CLAWS</span>
             </button>
           </div>
 
           <!-- Auto Routine & Emergency Stop -->
           <div class="actions-full-row">
             <button class="btn-auto-demo" onclick="triggerCommand('demo')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
               <span>AUTO DEMO SEQUENCE</span>
             </button>
 
             <button class="btn-emergency-stop" onclick="triggerCommand('stop')" title="Instant Hardware Motor Cutoff">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="5" y="5" width="14" height="14" rx="2" />
               </svg>
               <span>EMERGENCY STOP</span>
             </button>
           </div>
 
-          <!-- Speed Slider Box -->
+          <!-- Motor Speed Slider Box & Presets -->
           <div class="speed-control-box">
             <div class="speed-box-header">
               <span class="speed-box-title">MOTOR SPEED PWM (BTS7960)</span>
@@ -289,64 +138,19 @@
             </div>
           </div>
 
-        </div>
-
-        <!-- ========================================================
-             Panel 2: Custom Firmware (.BIN) & Web Serial Console
-             ======================================================== -->
-        <div class="workbench-panel" id="panel-firmware">
-          <div class="flasher-console-box">
-
-            <div class="flasher-top-controls">
-              <select class="serial-select" id="baud-rate-select">
-                <option value="115200">115200 Baud (Standard ESP)</option>
-                <option value="74880">74880 Baud (ESP Bootloader)</option>
-                <option value="9600">9600 Baud (Legacy)</option>
-              </select>
-
-              <button class="btn-hero-primary" onclick="connectWebSerial()" style="padding: 8px 16px;">
-                ⚡ CONNECT USB SERIAL
-              </button>
-
-              <a href="/update" target="_blank" class="btn-hero-secondary" style="padding: 8px 16px; text-decoration: none;">
-                🌐 OPEN WEB OTA (/update)
-              </a>
-            </div>
-
-            <!-- Drag & Drop Firmware Upload -->
-            <div class="file-dropzone" id="firmware-dropzone">
-              <input type="file" id="firmware-file-input" accept=".bin" style="display:none;">
-              <p>SELECT OR DRAG &amp; DROP FIRMWARE BINARY (.BIN)</p>
-              <span>Build file from .pio/build/nodemcuv2/firmware.bin or Arduino IDE</span>
-            </div>
-
-            <!-- Real-time Web Serial Terminal -->
-            <div class="serial-terminal" id="serial-terminal">
-              <div class="terminal-line success">[SYSTEM] Ready for native browser communication.</div>
-              <div class="terminal-line info">[COMM] Web Serial API &amp; ESP8266 REST endpoints active.</div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- ========================================================
-             Panel 3: Tactile Controls & Calibration Drawers
-             ======================================================== -->
-        <div class="workbench-panel" id="panel-tactile">
-
-          <!-- Timing Calibration Accordion -->
+          <!-- Compact Collapsible Calibration (Network Info Removed) -->
           <div class="accordion-wrapper">
-            <div class="accordion-item open" id="acc-timing">
+            <div class="accordion-item" id="acc-timing">
               <div class="accordion-header" onclick="toggleAccordion('acc-timing')">
-                <span>⏱ MOTION TIMING &amp; TRAVEL CALIBRATION</span>
+                <span>⏱ MOTION TIMING &amp; CALIBRATION</span>
                 <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </div>
               <div class="accordion-body">
                 <div>
-                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px; font-family:var(--font-mono);">
-                    <span>Deploy Duration (Red Cable)</span>
+                  <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-bottom:4px; font-family:var(--font-mono);">
+                    <span>Deploy Duration</span>
                     <span id="deploy-time-label">3.0 s</span>
                   </div>
                   <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="deploy-slider"
@@ -354,8 +158,8 @@
                 </div>
 
                 <div>
-                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px; font-family:var(--font-mono);">
-                    <span>Retract Duration (Blue Cable)</span>
+                  <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-bottom:4px; font-family:var(--font-mono);">
+                    <span>Retract Duration</span>
                     <span id="retract-time-label">3.0 s</span>
                   </div>
                   <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="retract-slider"
@@ -363,7 +167,7 @@
                 </div>
 
                 <div>
-                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px; font-family:var(--font-mono);">
+                  <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-bottom:4px; font-family:var(--font-mono);">
                     <span>Demo Hold Duration</span>
                     <span id="hold-time-label">2.0 s</span>
                   </div>
@@ -371,94 +175,41 @@
                     oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
                 </div>
 
-                <button class="btn-hero-primary" onclick="saveCalibration()" style="width:100%; justify-content:center;">
-                  APPLY CALIBRATION VALUES
+                <button class="btn-auto-demo" onclick="saveCalibration()" style="width:100%; justify-content:center;">
+                  APPLY CALIBRATION
                 </button>
               </div>
             </div>
-
-            <!-- Diagnostics Accordion -->
-            <div class="accordion-item" id="acc-diag">
-              <div class="accordion-header" onclick="toggleAccordion('acc-diag')">
-                <span>📶 NETWORK &amp; HARDWARE DIAGNOSTICS</span>
-                <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
-              <div class="accordion-body">
-                <table class="diag-table">
-                  <tr>
-                    <td>Wi-Fi Access Point (SSID)</td>
-                    <td class="diag-val">Project-CLAW</td>
-                  </tr>
-                  <tr>
-                    <td>Access Point Password</td>
-                    <td class="diag-val">claw12345</td>
-                  </tr>
-                  <tr>
-                    <td>Web Controller IP</td>
-                    <td class="diag-val">192.168.4.1</td>
-                  </tr>
-                  <tr>
-                    <td>mDNS Hostname URL</td>
-                    <td class="diag-val">http://claw.local</td>
-                  </tr>
-                  <tr>
-                    <td>Motor 1 Drivers</td>
-                    <td class="diag-val">BTS7960 43A (RPWM: D1/GPIO5, LPWM: D2/GPIO4)</td>
-                  </tr>
-                  <tr>
-                    <td>Motor 2 Drivers</td>
-                    <td class="diag-val">BTS7960 43A (RPWM: D5/GPIO14, LPWM: D6/GPIO12)</td>
-                  </tr>
-                  <tr>
-                    <td>Hardware Dead-time Interlock</td>
-                    <td class="diag-val" style="color:var(--pixel-green)">150 ms (ACTIVE)</td>
-                  </tr>
-                </table>
-              </div>
-            </div>
-
           </div>
 
         </div>
 
         <!-- ========================================================
-             Panel 4: Command Center & Fleet Docs
+             Panel 2: Custom Firmware (.BIN) & Web Flasher (When Selected)
              ======================================================== -->
-        <div class="workbench-panel" id="panel-command">
-          <div class="speed-control-box">
-            <h3 style="font-family: var(--font-dot); font-size: 18px; margin-bottom: 6px;">
-              COMMAND CENTER &bull; HARDWARE FLEET ARCHITECTURE
-            </h3>
-            <p style="font-size: 13px; color: var(--text-sub); line-height: 1.6;">
-              Project CLAW is a high-torque wearable animatronic mechanism with 6 claw/arm assemblies actuated by dual 12V 100RPM Johnson geared DC motors. Motor 1 contracts and deploys the claws via a red cable network, while Motor 2 retracts them via an independent blue cable network.
-            </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
-              <div class="motor-stat-card">
-                <div class="motor-stat-label"><span>CONTROLLER</span></div>
-                <div class="motor-stat-val">NodeMCU ESP8266</div>
-              </div>
-              <div class="motor-stat-card">
-                <div class="motor-stat-label"><span>MOTOR DRIVERS</span></div>
-                <div class="motor-stat-val">2x BTS7960 43A H-Bridge</div>
-              </div>
-              <div class="motor-stat-card">
-                <div class="motor-stat-label"><span>POWER BUS</span></div>
-                <div class="motor-stat-val">12V 7Ah LiFePO4 / 3S LiPo</div>
-              </div>
-              <div class="motor-stat-card">
-                <div class="motor-stat-label"><span>LOGIC REGULATION</span></div>
-                <div class="motor-stat-val">12V &rarr; 5V Buck Converter</div>
-              </div>
+        <div class="workbench-panel" id="panel-firmware">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; gap:6px;">
+              <button class="btn-auto-demo" onclick="connectWebSerial()" style="flex:1;">
+                ⚡ CONNECT USB
+              </button>
+              <a href="/update" target="_blank" class="btn-auto-demo" style="flex:1; text-decoration:none;">
+                🌐 WEB OTA (/update)
+              </a>
+            </div>
+
+            <!-- Serial Terminal Console -->
+            <div class="serial-terminal" id="serial-terminal">
+              <div class="terminal-line success">[SYSTEM] Himalix Projects controller ready.</div>
             </div>
           </div>
         </div>
 
       </div>
 
-    </div>
-  </section>
+    </main>
+
+  </div>
 
   <!-- Toast Notification -->
   <div class="toast-notice" id="toast-notice">Settings Applied</div>
