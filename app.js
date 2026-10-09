@@ -1,20 +1,20 @@
 /**
  * Project CLAW / Himalix Projects — Precision Mobile Hardware Controller
- * Hold-to-Run (Momentary Actuation) & Anti-Zoom/Anti-Select Handling
+ * Automated 6-Step Sequence with Mathematical Homing & Flash EEPROM Persistence
  */
 
 // Application State
-let targetPwm = 850;
-let deployDuration = 3000;
-let retractDuration = 3000;
-let holdDuration = 2000;
+let cycleEnabled = false;
+let isHoming = false;
+let activeStep = 0;
+let rotationTime = 3000; // Parameter x (ms)
+let pauseTime = 2000;    // Parameter y (ms)
+let motorSpeed = 850;    // PWM (200 - 1023)
 
-// Claw Travel Position Tracking (0 = Fully Retracted, deployDuration = Fully Deployed)
-let clawTravelMs = 0;
-let momentaryTimer = null;
-let activeHoldDirection = null;
+let isUserAdjustingSlider = false;
+let sliderSaveTimeout = null;
 
-// Serial Communication Variables
+// Serial Communication Variables (Web Serial API fallback)
 let serialPort = null;
 let serialReader = null;
 let isSerialConnected = false;
@@ -22,12 +22,11 @@ let isSerialConnected = false;
 // DOM Initialization
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  setupHoldToRunButtons();
   setupGlobalAntiSelect();
   setTimeout(() => {
     liveSyncStatus();
-    setInterval(liveSyncStatus, 1200);
-  }, 300);
+    setInterval(liveSyncStatus, 750);
+  }, 250);
 });
 
 // ==========================================
@@ -66,30 +65,25 @@ function applyTheme(theme) {
 // Anti-Select / Anti-Zoom / Anti-Copy Setup
 // ==========================================
 function setupGlobalAntiSelect() {
-  // Prevent context menu except inside input fields
   window.addEventListener('contextmenu', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     e.preventDefault();
   }, { capture: true });
 
-  // Prevent text selection highlights except in inputs
   document.addEventListener('selectstart', (e) => {
     if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'TEXTAREA') {
       e.preventDefault();
     }
   });
 
-  // Prevent drag ghosting
   document.addEventListener('dragstart', (e) => {
     e.preventDefault();
   });
 
-  // Prevent mobile pinch and zoom gestures
   document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
   document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
   document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
 
-  // Prevent double-tap zoom on quick taps
   let lastTouchEnd = 0;
   document.addEventListener('touchend', (e) => {
     const now = Date.now();
@@ -101,224 +95,226 @@ function setupGlobalAntiSelect() {
 }
 
 // ==========================================
-// Momentary Hold-To-Run Motion (Dead-Man Switch)
-// "Press to deploy, release to stop, repress to resume from where you left off"
+// Master Power / Cycle Toggle Controller
 // ==========================================
-function setupHoldToRunButtons() {
-  bindMomentaryControl('btn-deploy', 'deploy');
-  bindMomentaryControl('btn-retract', 'retract');
+function toggleMasterCycle() {
+  if (isHoming) {
+    showToast('RETURNING MOTORS TO 0 ROTATION...');
+    return;
+  }
 
-  // Window-level safety fallback: if finger or mouse lifts anywhere outside the button
-  window.addEventListener('mouseup', () => {
-    if (activeHoldDirection) stopMomentaryMotion(activeHoldDirection);
-  });
-  window.addEventListener('touchend', (e) => {
-    // If no touches remain on screen, stop any active hold
-    if (e.touches && e.touches.length === 0 && activeHoldDirection) {
-      stopMomentaryMotion(activeHoldDirection);
-    }
-  });
-  window.addEventListener('touchcancel', () => {
-    if (activeHoldDirection) stopMomentaryMotion(activeHoldDirection);
-  });
-}
+  const newState = !cycleEnabled;
+  cycleEnabled = newState;
 
-function bindMomentaryControl(elementId, direction) {
-  const btn = document.getElementById(elementId);
-  if (!btn) return;
+  // Optimistic UI state update
+  updateMasterToggleUI(cycleEnabled, false, activeStep);
 
-  const onStart = (e) => {
-    if (e.cancelable) e.preventDefault();
-    startMomentaryMotion(direction);
-  };
+  const apiEndpoint = `/api/toggle?state=${newState ? '1' : '0'}`;
+  const serialCmd = newState ? 'START\n' : 'STOP\n';
 
-  const onEnd = (e) => {
-    if (e.cancelable) e.preventDefault();
-    stopMomentaryMotion(direction);
-  };
+  sendSerialOrApi(apiEndpoint, serialCmd);
 
-  // Touch Events (Mobile)
-  btn.addEventListener('touchstart', onStart, { passive: false });
-  btn.addEventListener('touchend', onEnd, { passive: false });
-  btn.addEventListener('touchcancel', onEnd, { passive: false });
-
-  // Mouse Events (Desktop)
-  btn.addEventListener('mousedown', onStart);
-  btn.addEventListener('mouseup', onEnd);
-  btn.addEventListener('mouseleave', onEnd);
-
-  // Prevent context menu on long-press
-  btn.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  });
-}
-
-function startMomentaryMotion(direction) {
-  if (activeHoldDirection === direction) return;
-  activeHoldDirection = direction;
-
-  const btn = document.getElementById(direction === 'deploy' ? 'btn-deploy' : 'btn-retract');
-  if (btn) btn.classList.add('holding');
-
-  // Trigger hardware motor
-  if (direction === 'deploy') {
-    sendSerialOrApi('/api/deploy', 'DEPLOY\n');
+  if (newState) {
+    showToast('AUTOMATION CYCLE STARTED');
   } else {
-    sendSerialOrApi('/api/retract', 'RETRACT\n');
+    showToast('STOPPING: RETURNING MOTORS TO 0...');
   }
 
-  clearInterval(momentaryTimer);
-  const stepMs = 50;
+  // Immediate poll refresh
+  setTimeout(liveSyncStatus, 200);
+}
 
-  momentaryTimer = setInterval(() => {
-    if (direction === 'deploy') {
-      clawTravelMs = Math.min(deployDuration, clawTravelMs + stepMs);
-      const pct = Math.round((clawTravelMs / deployDuration) * 100);
-      updateStatusDisplay(`DEPLOYING ${pct}%`, 'var(--pixel-red)', 'rgba(225, 29, 72, 0.15)');
+function updateMasterToggleUI(enabled, homing, step, progress) {
+  const card = document.getElementById('master-toggle-card');
+  const btn = document.getElementById('master-switch-btn');
+  const label = document.getElementById('switch-text');
+  const badge = document.getElementById('master-state-tag');
+  const title = document.getElementById('master-status-title');
+  const desc = document.getElementById('master-status-desc');
+  const statusPill = document.getElementById('status-pill');
+  const statusText = document.getElementById('status-text');
+  const statusDot = document.getElementById('status-pulse-dot');
+  const activeLabel = document.getElementById('pipeline-active-label');
 
-      // Reached mechanical limit
-      if (clawTravelMs >= deployDuration) {
-        stopMomentaryMotion('deploy');
-        updateStatusDisplay('DEPLOYED 100%', 'var(--pixel-red)', 'rgba(225, 29, 72, 0.2)');
-        showToast('DEPLOYED (100%)');
-      }
+  if (homing) {
+    if (card) { card.className = 'master-toggle-card homing'; }
+    if (btn) { btn.className = 'hero-toggle-switch homing'; }
+    if (label) label.textContent = 'ZEROING';
+    if (badge) { badge.className = 'master-badge badge-homing'; badge.textContent = 'HOMING'; }
+    if (title) title.textContent = 'RETURNING TO 0...';
+    if (desc) desc.textContent = 'Calculating net rotation & reversing active motor back to 0 initial position.';
+    if (statusText) statusText.textContent = 'HOMING (TO 0°)';
+    if (statusPill) {
+      statusPill.style.color = 'var(--pixel-amber)';
+      statusPill.style.background = 'rgba(245, 158, 11, 0.12)';
+      statusPill.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+    }
+    if (statusDot) statusDot.style.background = 'var(--pixel-amber)';
+    if (activeLabel) activeLabel.textContent = 'HOMING RESET';
+  } else if (enabled) {
+    if (card) { card.className = 'master-toggle-card active'; }
+    if (btn) { btn.className = 'hero-toggle-switch active'; }
+    if (label) label.textContent = 'ON';
+    if (badge) { badge.className = 'master-badge badge-running'; badge.textContent = 'ACTIVE'; }
+    if (title) title.textContent = 'AUTOMATION ACTIVE';
+    if (desc) desc.textContent = 'Continuous 6-step loop running across Motor 1 and Motor 2.';
+    if (statusText) statusText.textContent = `STEP ${step || 1} RUNNING`;
+    if (statusPill) {
+      statusPill.style.color = 'var(--pixel-green)';
+      statusPill.style.background = 'rgba(16, 185, 129, 0.12)';
+      statusPill.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+    }
+    if (statusDot) statusDot.style.background = 'var(--pixel-green)';
+    if (activeLabel) activeLabel.textContent = `STEP ${step || 1} / 5`;
+  } else {
+    if (card) { card.className = 'master-toggle-card'; }
+    if (btn) { btn.className = 'hero-toggle-switch'; }
+    if (label) label.textContent = 'OFF';
+    if (badge) { badge.className = 'master-badge'; badge.textContent = 'STOPPED'; }
+    if (title) title.textContent = 'SYSTEM IDLE';
+    if (desc) desc.textContent = 'Both motors resting at calibrated 0 initial rotation.';
+    if (statusText) statusText.textContent = 'OFF (0° ROTATION)';
+    if (statusPill) {
+      statusPill.style.color = 'var(--text-sub)';
+      statusPill.style.background = 'rgba(0, 0, 0, 0.05)';
+      statusPill.style.borderColor = 'var(--border-main)';
+    }
+    if (statusDot) statusDot.style.background = 'var(--text-dim)';
+    if (activeLabel) activeLabel.textContent = 'STEP 0 / 5';
+  }
+
+  // Update Step Pipeline visual cards
+  for (let i = 1; i <= 5; i++) {
+    const stepCard = document.getElementById(`step-card-${i}`);
+    const fill = document.getElementById(`fill-step-${i}`);
+    if (!stepCard) continue;
+
+    if (enabled && step === i) {
+      let typeClass = 'step-m1';
+      if (i === 3) typeClass = 'step-pause';
+      else if (i >= 4) typeClass = 'step-m2';
+      stepCard.className = `pipeline-step-card active ${typeClass}`;
+      if (fill) fill.style.width = `${progress || 0}%`;
     } else {
-      clawTravelMs = Math.max(0, clawTravelMs - stepMs);
-      const pct = Math.round((clawTravelMs / deployDuration) * 100);
-      updateStatusDisplay(`RETRACTING ${pct}%`, 'var(--pixel-blue)', 'rgba(37, 99, 235, 0.15)');
-
-      // Reached mechanical limit
-      if (clawTravelMs <= 0) {
-        stopMomentaryMotion('retract');
-        updateStatusDisplay('RETRACTED 0%', 'var(--pixel-blue)', 'rgba(37, 99, 235, 0.2)');
-        showToast('RETRACTED (0%)');
-      }
+      stepCard.className = 'pipeline-step-card';
+      if (fill) fill.style.width = '0%';
     }
-  }, stepMs);
-}
-
-function stopMomentaryMotion(direction) {
-  if (activeHoldDirection !== direction) return;
-  clearInterval(momentaryTimer);
-  activeHoldDirection = null;
-
-  const btn = document.getElementById(direction === 'deploy' ? 'btn-deploy' : 'btn-retract');
-  if (btn) btn.classList.remove('holding');
-
-  // Immediately stop motors on hardware
-  sendSerialOrApi('/api/stop', 'STOP\n');
-
-  // Calculate paused position percentage
-  const pct = Math.round((clawTravelMs / deployDuration) * 100);
-  updateStatusDisplay(`PAUSED (${pct}%)`, 'var(--pixel-green)', 'rgba(16, 185, 129, 0.12)');
-}
-
-function triggerEmergencyStop() {
-  clearInterval(momentaryTimer);
-  activeHoldDirection = null;
-
-  document.querySelectorAll('.btn-tactile').forEach(b => b.classList.remove('holding'));
-  sendSerialOrApi('/api/stop', 'STOP\n');
-  updateStatusDisplay('STOPPED', 'var(--pixel-red)', 'rgba(225, 29, 72, 0.25)');
-  showToast('EMERGENCY STOP');
-}
-
-function triggerAutoDemo() {
-  clearInterval(momentaryTimer);
-  activeHoldDirection = null;
-  sendSerialOrApi('/api/demo', 'DEMO\n');
-  showToast('AUTO DEMO RUNNING');
-  updateStatusDisplay('DEMO RUNNING', 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.15)');
-
-  // Simulate demo cycle
-  const stepMs = 50;
-  const demoInterval = setInterval(() => {
-    clawTravelMs = Math.min(deployDuration, clawTravelMs + stepMs * 2);
-    const pct = Math.round((clawTravelMs / deployDuration) * 100);
-    updateStatusDisplay(`DEMO DEPLOY ${pct}%`, 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.15)');
-
-    if (clawTravelMs >= deployDuration) {
-      clearInterval(demoInterval);
-      updateStatusDisplay('DEMO HOLDING', 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.2)');
-      setTimeout(() => {
-        const retractInterval = setInterval(() => {
-          clawTravelMs = Math.max(0, clawTravelMs - stepMs * 2);
-          const rPct = Math.round((clawTravelMs / deployDuration) * 100);
-          updateStatusDisplay(`DEMO RETRACT ${rPct}%`, 'var(--pixel-amber)', 'rgba(245, 158, 11, 0.15)');
-
-          if (clawTravelMs <= 0) {
-            clearInterval(retractInterval);
-            updateStatusDisplay('READY (0%)', 'var(--pixel-green)', 'rgba(16, 185, 129, 0.12)');
-            showToast('DEMO COMPLETE');
-          }
-        }, stepMs);
-      }, holdDuration);
-    }
-  }, stepMs);
-}
-
-function updateStatusDisplay(text, color, bg) {
-  const pill = document.getElementById('status-pill');
-  if (!pill) return;
-  const label = pill.querySelector('span:last-child') || pill;
-  label.textContent = text;
-  if (color) pill.style.color = color;
-  if (bg) pill.style.background = bg;
-}
-
-// ==========================================
-// Speed & Calibration Controls
-// ==========================================
-function onSpeedSliderChange(val) {
-  targetPwm = parseInt(val);
-  const pct = Math.round((targetPwm / 1023) * 100);
-  document.getElementById('speed-val-display').textContent = `${pct}% (${targetPwm} PWM)`;
-  document.querySelectorAll('.btn-speed-preset').forEach(btn => btn.classList.remove('active'));
-}
-
-function setSpeedPreset(val, btnElement) {
-  document.getElementById('speed-slider').value = val;
-  onSpeedSliderChange(val);
-  document.querySelectorAll('.btn-speed-preset').forEach(btn => btn.classList.remove('active'));
-  if (btnElement) btnElement.classList.add('active');
-  sendSerialOrApi(`/api/config?pwm=${val}`, `SET_PWM=${val}\n`);
-}
-
-function saveCalibration() {
-  deployDuration = parseInt(document.getElementById('deploy-slider').value);
-  retractDuration = parseInt(document.getElementById('retract-slider').value);
-  holdDuration = parseInt(document.getElementById('hold-slider').value);
-
-  sendSerialOrApi(
-    `/api/config?pwm=${targetPwm}&deploy=${deployDuration}&retract=${retractDuration}&hold=${holdDuration}`,
-    `CALIB:${targetPwm},${deployDuration},${retractDuration},${holdDuration}\n`
-  );
-  showToast('CALIBRATION APPLIED');
-}
-
-// ==========================================
-// Web Serial API & Hardware Communication
-// ==========================================
-function sendSerialOrApi(apiEndpoint, serialCmd) {
-  if (isSerialConnected && serialCmd && serialPort && serialPort.writable) {
-    const encoder = new TextEncoder();
-    const writer = serialPort.writable.getWriter();
-    writer.write(encoder.encode(serialCmd)).finally(() => writer.releaseLock());
   }
-  fetch(apiEndpoint, { method: 'POST' }).catch(() => {});
 }
 
-// Live Status Polling
+// ==========================================
+// Parameter Sliders & Hardware Flash Storage
+// ==========================================
+function onRotationSliderInput(val) {
+  isUserAdjustingSlider = true;
+  rotationTime = parseInt(val);
+  const sec = (rotationTime / 1000).toFixed(1);
+  const label = document.getElementById('rotation-val-label');
+  if (label) label.textContent = `${sec} s`;
+
+  debounceAutoSave();
+}
+
+function onPauseSliderInput(val) {
+  isUserAdjustingSlider = true;
+  pauseTime = parseInt(val);
+  const sec = (pauseTime / 1000).toFixed(1);
+  const label = document.getElementById('pause-val-label');
+  if (label) label.textContent = `${sec} s`;
+
+  debounceAutoSave();
+}
+
+function onSpeedSliderInput(val) {
+  isUserAdjustingSlider = true;
+  motorSpeed = parseInt(val);
+  const pct = Math.round((motorSpeed / 1023) * 100);
+  const label = document.getElementById('speed-val-label');
+  if (label) label.textContent = `${pct}% (${motorSpeed} PWM)`;
+
+  debounceAutoSave();
+}
+
+function debounceAutoSave() {
+  clearTimeout(sliderSaveTimeout);
+  sliderSaveTimeout = setTimeout(() => {
+    saveParametersToHardware(true);
+    isUserAdjustingSlider = false;
+  }, 900);
+}
+
+function saveParametersToHardware(isQuiet = false) {
+  rotationTime = parseInt(document.getElementById('slider-rotation-time')?.value || rotationTime);
+  pauseTime = parseInt(document.getElementById('slider-pause-time')?.value || pauseTime);
+  motorSpeed = parseInt(document.getElementById('slider-motor-speed')?.value || motorSpeed);
+
+  const apiEndpoint = `/api/config?rotation_time=${rotationTime}&pause_time=${pauseTime}&speed=${motorSpeed}`;
+  const serialCmd = `SET_X=${rotationTime}\nSET_Y=${pauseTime}\nSET_PWM=${motorSpeed}\n`;
+
+  sendSerialOrApi(apiEndpoint, serialCmd);
+  if (!isQuiet) {
+    showToast('SAVED TO MCU FLASH');
+  }
+}
+
+// ==========================================
+// Emergency Hard Stop
+// ==========================================
+function triggerEmergencyHardStop() {
+  cycleEnabled = false;
+  isHoming = false;
+  activeStep = 0;
+
+  updateMasterToggleUI(false, false, 0, 0);
+  sendSerialOrApi('/api/stop', 'KILL\n');
+  showToast('EMERGENCY HARD STOP');
+}
+
+// ==========================================
+// Live Hardware Status Synchronization
+// ==========================================
 async function liveSyncStatus() {
   try {
     const res = await fetch('/api/status');
     if (!res.ok) return;
     const data = await res.json();
-    if (!activeHoldDirection && data.state) {
-      updateStatusDisplay(data.state);
+
+    cycleEnabled = data.enabled || false;
+    isHoming = data.is_homing || false;
+    activeStep = data.step || 0;
+
+    updateMasterToggleUI(cycleEnabled, isHoming, activeStep, data.step_progress || 0);
+
+    // Sync sliders from MCU persistent storage if user isn't currently dragging them
+    if (!isUserAdjustingSlider) {
+      if (data.rotation_time && data.rotation_time !== rotationTime) {
+        rotationTime = data.rotation_time;
+        const slider = document.getElementById('slider-rotation-time');
+        const label = document.getElementById('rotation-val-label');
+        if (slider) slider.value = rotationTime;
+        if (label) label.textContent = (rotationTime / 1000).toFixed(1) + ' s';
+      }
+
+      if (data.pause_time !== undefined && data.pause_time !== pauseTime) {
+        pauseTime = data.pause_time;
+        const slider = document.getElementById('slider-pause-time');
+        const label = document.getElementById('pause-val-label');
+        if (slider) slider.value = pauseTime;
+        if (label) label.textContent = (pauseTime / 1000).toFixed(1) + ' s';
+      }
+
+      if (data.speed && data.speed !== motorSpeed) {
+        motorSpeed = data.speed;
+        const slider = document.getElementById('slider-motor-speed');
+        const label = document.getElementById('speed-val-label');
+        if (slider) slider.value = motorSpeed;
+        if (label) {
+          const pct = Math.round((motorSpeed / 1023) * 100);
+          label.textContent = `${pct}% (${motorSpeed} PWM)`;
+        }
+      }
     }
+
     updateWirelessStatus(data);
   } catch (err) {}
 }
@@ -376,7 +372,6 @@ function updateWirelessStatus(data) {
 
   if (deviceId && data.hawa_device_id) deviceId.textContent = data.hawa_device_id;
 
-  // Pre-fill inputs on initial load if they are untouched
   const inputSsid = document.getElementById('input-wifi-ssid');
   const inputServer = document.getElementById('input-hawa-server');
   const inputName = document.getElementById('input-device-name');
@@ -393,6 +388,18 @@ function updateWirelessStatus(data) {
   if (data.hawa_ota_running) {
     showToast('WIRELESS OTA UPDATE RUNNING...');
   }
+}
+
+// ==========================================
+// Serial / HTTP Communication Helper
+// ==========================================
+function sendSerialOrApi(apiEndpoint, serialCmd) {
+  if (isSerialConnected && serialCmd && serialPort && serialPort.writable) {
+    const encoder = new TextEncoder();
+    const writer = serialPort.writable.getWriter();
+    writer.write(encoder.encode(serialCmd)).finally(() => writer.releaseLock());
+  }
+  fetch(apiEndpoint, { method: 'POST' }).catch(() => {});
 }
 
 // ==========================================
@@ -507,7 +514,6 @@ async function saveWifiCredentials() {
     return;
   }
 
-  // Auto-normalize Hawa Server URL (e.g. hawa-platform.onrender.com -> wss://hawa-platform.onrender.com/ws)
   if (!server || server === 'hawa-platform.onrender.com') {
     server = 'wss://hawa-platform.onrender.com/ws';
   } else if (!server.startsWith('ws://') && !server.startsWith('wss://')) {
@@ -523,7 +529,6 @@ async function saveWifiCredentials() {
     }
   }
 
-  // Update input field to show normalized URL
   const inputServer = document.getElementById('input-hawa-server');
   if (inputServer) inputServer.value = server;
 

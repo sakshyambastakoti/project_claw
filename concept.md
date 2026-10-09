@@ -51,13 +51,27 @@ The upper 12 V 100 RPM Johnson motor drives the **red cable system** through a s
 
 The lower 12 V 100 RPM Johnson motor drives the **blue cable system** through a spool/drum. It pulls the second cable network and returns/retracts the six pipe/claw assemblies.
 
-### Independent Dedicated Motor Operation
+### Automated 6-Step Cycle with Mathematical Homing to 0
 
-Each motor is dedicated to its respective motion direction:
-- **During Deploy (Motor 1 active):** Motor 1 turns forward (`MOTOR_DIR_PULL`) to wind the red cable and deploy the claws. Motor 2 remains completely stopped/idle (`stopMotor2()`) with zero reverse spin.
-- **During Retract (Motor 2 active):** Motor 2 turns forward (`MOTOR_DIR_PULL`) to wind the blue cable and retract the claws. Motor 1 remains completely stopped/idle (`stopMotor1()`) with zero reverse spin.
-- **On Stop / Idle / Hold:** Both motors stop simultaneously (`stopAllMotors()`) to hold the claws in their current position.
-- This eliminates loose cable slack and drum bird-nesting from reverse over-spinning while ensuring precise motion control.
+The system operates an automated bidirectional cycle with mathematical homing:
+- **Initial Condition:** Both Motor 1 and Motor 2 start at initial 0 rotation.
+- **Step 1:** Motor 1 turns Clockwise for $x$ seconds (`Rotation Time`). Motor 2 is stopped.
+- **Step 2:** Motor 1 turns Anticlockwise for $x$ seconds (`Rotation Time`). Motor 2 is stopped.
+- **Step 3:** All rotation stops for $y$ seconds (`Pause Interval`). Both motors stopped at 0 rotation.
+- **Step 4:** Motor 2 turns Clockwise for $x$ seconds (`Rotation Time`). Motor 1 is stopped.
+- **Step 5:** Motor 2 turns Anticlockwise for $x$ seconds (`Rotation Time`). Motor 1 is stopped.
+- **Step 6:** Loops automatically back to Step 1 as long as the master toggle is ON.
+
+#### Mathematical Homing on Toggle OFF:
+When the user switches the toggle OFF at any arbitrary point in the cycle:
+1. **If during Step 1 (M1 CW for elapsed time $t \le x$):** Motor 1 has displaced by $+t$ (CW). The controller reverses Motor 1 (CCW) for exactly $t$ seconds, bringing Motor 1 back to 0 rotation.
+2. **If during Step 2 (M1 CCW for elapsed time $t \le x$):** Motor 1 already went $+x$ in Step 1 and has reversed by $-t$. The remaining distance to 0 is $(x - t)$ in the CCW direction. The controller continues rotating CCW for $(x - t)$ seconds until 0 is reached.
+3. **If during Step 3 (Pause $y$):** Both motors are already at 0 rotation; the controller stops immediately.
+4. **If during Step 4 (M2 CW for elapsed time $t \le x$):** Motor 2 has displaced by $+t$ (CW). The controller reverses Motor 2 (CCW) for exactly $t$ seconds, bringing Motor 2 back to 0 rotation.
+5. **If during Step 5 (M2 CCW for elapsed time $t \le x$):** Motor 2 already went $+x$ in Step 4 and has reversed by $-t$. The remaining distance to 0 is $(x - t)$ in the CCW direction. The controller continues rotating CCW for $(x - t)$ seconds until 0 is reached.
+
+#### Non-Volatile Memory (Flash EEPROM):
+Parameters $x$ (`Rotation Time`), $y$ (`Pause Interval`), and Motor Speed (PWM) are stored in the ESP8266 flash EEPROM (address 320) so they persist across power loss.
 
 ## 4. Electronics
 
