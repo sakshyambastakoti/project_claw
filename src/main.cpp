@@ -139,13 +139,13 @@ void startDeploy() {
   activeDuration = deployTimeMs;
 
   // Motor 1 pulls Red cable (Deploy / Contract)
-  // Motor 2 runs in reverse to unwind / pay out Blue cable
+  // Motor 2 remains as-is (stopped / no reverse spin needed)
   setMotor1(MOTOR_DIR_PULL, motorSpeedPwm);
-  setMotor2(MOTOR_DIR_RELEASE, unwindSpeedPwm);
+  stopMotor2();
 
-  Serial.printf("[CLAW] Started Deploy (Duration: %u ms | M1 Pull PWM: %d, M2 Unwind PWM: %d)\n",
-                activeDuration, motorSpeedPwm, unwindSpeedPwm);
-  Hawa.log("[CLAW] Deploy started (M1 Pull: " + String(motorSpeedPwm) + ", M2 Unwind: " + String(unwindSpeedPwm) + ")");
+  Serial.printf("[CLAW] Started Deploy (Duration: %u ms | M1 Deploy PWM: %d, M2 Idle)\n",
+                activeDuration, motorSpeedPwm);
+  Hawa.log("[CLAW] Deploy started (M1 Deploy: " + String(motorSpeedPwm) + ", M2 Idle)");
   Hawa.sendData("state", "DEPLOYING");
 }
 
@@ -158,13 +158,13 @@ void startRetract() {
   activeDuration = retractTimeMs;
 
   // Motor 2 pulls Blue cable (Retract)
-  // Motor 1 runs in reverse to unwind / pay out Red cable
+  // Motor 1 remains as-is (stopped / no reverse spin needed)
   setMotor2(MOTOR_DIR_PULL, motorSpeedPwm);
-  setMotor1(MOTOR_DIR_RELEASE, unwindSpeedPwm);
+  stopMotor1();
 
-  Serial.printf("[CLAW] Started Retract (Duration: %u ms | M2 Pull PWM: %d, M1 Unwind PWM: %d)\n",
-                activeDuration, motorSpeedPwm, unwindSpeedPwm);
-  Hawa.log("[CLAW] Retract started (M2 Pull: " + String(motorSpeedPwm) + ", M1 Unwind: " + String(unwindSpeedPwm) + ")");
+  Serial.printf("[CLAW] Started Retract (Duration: %u ms | M2 Retract PWM: %d, M1 Idle)\n",
+                activeDuration, motorSpeedPwm);
+  Hawa.log("[CLAW] Retract started (M2 Retract: " + String(motorSpeedPwm) + ", M1 Idle)");
   Hawa.sendData("state", "RETRACTING");
 }
 
@@ -176,12 +176,12 @@ void startDemo() {
   motionStartTime = millis();
   activeDuration = deployTimeMs;
 
-  // Demo Deploy: Motor 1 pulls, Motor 2 unwinds
+  // Demo Deploy: Only Motor 1 pulls, Motor 2 remains idle
   setMotor1(MOTOR_DIR_PULL, motorSpeedPwm);
-  setMotor2(MOTOR_DIR_RELEASE, unwindSpeedPwm);
+  stopMotor2();
 
-  Serial.printf("[CLAW] Started Full Demo Sequence (Deploy phase)\n");
-  Hawa.log("[CLAW] Auto Demo sequence initiated");
+  Serial.printf("[CLAW] Started Full Demo Sequence (Deploy phase - M1 only)\n");
+  Hawa.log("[CLAW] Auto Demo sequence initiated (Single-motor actuation)");
   Hawa.sendData("state", "DEMO_DEPLOYING");
 }
 
@@ -256,10 +256,10 @@ void updateStateMachine() {
         currentState = STATE_DEMO_RETRACTING;
         motionStartTime = millis();
         activeDuration = retractTimeMs;
-        // Demo Retract: Motor 2 pulls Blue cable, Motor 1 unwinds Red cable
+        // Demo Retract: Motor 2 pulls Blue cable, Motor 1 remains idle
         setMotor2(MOTOR_DIR_PULL, motorSpeedPwm);
-        setMotor1(MOTOR_DIR_RELEASE, unwindSpeedPwm);
-        Serial.println("[CLAW] Demo: Retracting claws (M2 Pull, M1 Unwind)...");
+        stopMotor1();
+        Serial.println("[CLAW] Demo: Retracting claws (M2 Retract only, M1 Idle)...");
         Hawa.sendData("state", "DEMO_RETRACTING");
       }
       break;
@@ -591,7 +591,7 @@ void handleSerialCommands() {
           if (p >= 200 && p <= 1023) {
             motorSpeedPwm = p;
             unwindSpeedPwm = p;
-            Serial.printf("[CONFIG] Motor and unwind PWM set to %d\n", p);
+            Serial.printf("[CONFIG] Motor PWM set to %d\n", p);
           }
         }
         serialBuffer = "";
