@@ -4,6 +4,7 @@
 #include <ESP8266mDNS.h>
 #include <ESP8266HTTPUpdateServer.h>
 #include <DNSServer.h>
+#include <EEPROM.h>
 #include <Hawa.h>
 #include "config.h"
 #include "web_page.h"
@@ -16,33 +17,39 @@ DNSServer dnsServer;
 // System States Definition
 // ==========================================
 enum SystemState {
-  STATE_IDLE,
-  STATE_DEPLOYING,
-  STATE_DEPLOYED,
-  STATE_RETRACTING,
-  STATE_RETRACTED,
-  STATE_DEMO_DEPLOYING,
-  STATE_DEMO_HOLDING,
-  STATE_DEMO_RETRACTING,
-  STATE_EMERGENCY_STOP
+  STATE_IDLE,            // 0: Both motors stopped at initial 0 rotation
+  STATE_STEP1_M1_CW,     // 1: Motor 1 turns clockwise for x seconds
+  STATE_STEP2_M1_CCW,    // 2: Motor 1 turns anticlockwise for x seconds
+  STATE_STEP3_PAUSE,     // 3: All rotation stops for y seconds
+  STATE_STEP4_M2_CW,     // 4: Motor 2 turns clockwise for x seconds
+  STATE_STEP5_M2_CCW,    // 5: Motor 2 turns anticlockwise for x seconds
+  STATE_HOMING,          // 6: Reversing active motor to return to 0 rotation
+  STATE_EMERGENCY_STOP   // 7: Manual emergency stop
 };
 
 // ==========================================
 // Global Variables & Config
 // ==========================================
 SystemState currentState = STATE_IDLE;
+bool cycleEnabled = false;
+int currentStep = 0; // 0 = Idle/Homing, 1..5 = Active Steps
 
-int motorSpeedPwm     = DEFAULT_PWM_SPEED;
-int unwindSpeedPwm    = DEFAULT_UNWIND_SPEED_PWM;
-uint32_t deployTimeMs = DEFAULT_DEPLOY_TIME_MS;
-uint32_t retractTimeMs= DEFAULT_RETRACT_TIME_MS;
-uint32_t demoHoldMs   = DEFAULT_DEMO_HOLD_MS;
+// Configurable Parameters (Stored persistently in EEPROM)
+uint32_t rotationTimeMs = DEFAULT_ROTATION_TIME_MS; // Parameter x (ms)
+uint32_t pauseTimeMs    = DEFAULT_PAUSE_TIME_MS;    // Parameter y (ms)
+int motorSpeedPwm       = DEFAULT_PWM_SPEED;        // Drive PWM (200 - 1023)
 
-// Active Motion Timing Tracking
-uint32_t motionStartTime = 0;
-uint32_t activeDuration  = 0;
+// Motion Timing Tracking
+uint32_t stepStartTime = 0;
+uint32_t stepDuration  = 0;
 
-// Current Live PWM outputs (positive = pull/forward, negative = unwind/reverse)
+// Homing Parameters for Returning to 0 Rotation
+int homingMotor        = 0;
+int homingDirection    = MOTOR_DIR_CCW;
+uint32_t homingStartTime = 0;
+uint32_t homingDuration  = 0;
+
+// Current Live PWM outputs (+ve = CW/Forward, -ve = CCW/Reverse)
 int currentM1Pwm = 0;
 int currentM2Pwm = 0;
 
@@ -56,12 +63,11 @@ uint32_t commandBlinkEndMs = 0;
 uint32_t lastCommandLedToggle = 0;
 bool commandLedState = false;
 
-// Trigger an immediate fast blinking burst on the inbuilt LED
-// whenever a command is sent from the web app or cloud/serial
-void triggerCommandBlink(uint32_t durationMs = 400) {
+// Trigger fast blinking burst on status LED upon command
+void triggerCommandBlink(uint32_t durationMs = 350) {
   commandBlinkEndMs = millis() + durationMs;
   commandLedState = true;
-  digitalWrite(PIN_LED_STATUS, LOW); // Active LOW on NodeMCU -> Turn ON
+  digitalWrite(PIN_LED_STATUS, LOW); // Active LOW on NodeMCU
 #ifdef LED_BUILTIN
   if (LED_BUILTIN != PIN_LED_STATUS) digitalWrite(LED_BUILTIN, LOW);
 #endif
@@ -71,30 +77,73 @@ void triggerCommandBlink(uint32_t durationMs = 400) {
 String serialBuffer = "";
 
 // ==========================================
+// EEPROM Persistent Storage Helpers
+// ==========================================
+void loadPersistentSettings() {
+  EEPROM.begin(512);
+  ClawPersistentSettings saved;
+  EEPROM.get(EEPROM_CONFIG_ADDR, saved);
+
+  if (saved.magic == EEPROM_CONFIG_MAGIC &&
+      saved.rotationTimeMs >= 300 && saved.rotationTimeMs <= 30000 &&
+      saved.pauseTimeMs <= 30000 &&
+      saved.motorSpeedPwm >= 200 && saved.motorSpeedPwm <= 1023) {
+    rotationTimeMs = saved.rotationTimeMs;
+    pauseTimeMs    = saved.pauseTimeMs;
+    motorSpeedPwm  = saved.motorSpeedPwm;
+    Serial.printf("[EEPROM] Restored Settings: Rotation Time (x)=%u ms, Pause (y)=%u ms, Speed=%d PWM\n",
+                  rotationTimeMs, pauseTimeMs, motorSpeedPwm);
+  } else {
+    // Defaults
+    rotationTimeMs = DEFAULT_ROTATION_TIME_MS;
+    pauseTimeMs    = DEFAULT_PAUSE_TIME_MS;
+    motorSpeedPwm  = DEFAULT_PWM_SPEED;
+
+    ClawPersistentSettings defSettings;
+    defSettings.magic = EEPROM_CONFIG_MAGIC;
+    defSettings.rotationTimeMs = rotationTimeMs;
+    defSettings.pauseTimeMs = pauseTimeMs;
+    defSettings.motorSpeedPwm = motorSpeedPwm;
+    EEPROM.put(EEPROM_CONFIG_ADDR, defSettings);
+    EEPROM.commit();
+    Serial.println("[EEPROM] Initialized fresh persistent settings in flash memory.");
+  }
+}
+
+void savePersistentSettings() {
+  ClawPersistentSettings toSave;
+  toSave.magic = EEPROM_CONFIG_MAGIC;
+  toSave.rotationTimeMs = rotationTimeMs;
+  toSave.pauseTimeMs = pauseTimeMs;
+  toSave.motorSpeedPwm = motorSpeedPwm;
+  EEPROM.put(EEPROM_CONFIG_ADDR, toSave);
+  EEPROM.commit();
+  Serial.printf("[EEPROM] Saved Settings: Rotation Time (x)=%u ms, Pause (y)=%u ms, Speed=%d PWM\n",
+                rotationTimeMs, pauseTimeMs, motorSpeedPwm);
+}
+
+// ==========================================
 // Low-Level Motor Driver Control Functions
 // ==========================================
 
-// Stop Motor 1 immediately and ensure dead-time
 void stopMotor1() {
   analogWrite(PIN_M1_RPWM, 0);
   analogWrite(PIN_M1_LPWM, 0);
   currentM1Pwm = 0;
 }
 
-// Stop Motor 2 immediately and ensure dead-time
 void stopMotor2() {
   analogWrite(PIN_M2_RPWM, 0);
   analogWrite(PIN_M2_LPWM, 0);
   currentM2Pwm = 0;
 }
 
-// Stop all motors safely
 void stopAllMotors() {
   stopMotor1();
   stopMotor2();
 }
 
-// Control Motor 1 (direction: +1 = Forward/Contract, -1 = Reverse/Release)
+// Control Motor 1 (+1 = Clockwise, -1 = Anticlockwise, 0 = Stop)
 void setMotor1(int direction, int pwm) {
   pwm = constrain(pwm, 0, 1023);
   if (direction > 0) {
@@ -110,7 +159,7 @@ void setMotor1(int direction, int pwm) {
   }
 }
 
-// Control Motor 2 (direction: +1 = Forward/Retract, -1 = Reverse/Release)
+// Control Motor 2 (+1 = Clockwise, -1 = Anticlockwise, 0 = Stop)
 void setMotor2(int direction, int pwm) {
   pwm = constrain(pwm, 0, 1023);
   if (direction > 0) {
@@ -126,161 +175,260 @@ void setMotor2(int direction, int pwm) {
   }
 }
 
-// ==========================================
-// High-Level Motion Commands
-// ==========================================
-
-void startDeploy() {
-  stopAllMotors();
-  delay(MOTOR_DEADTIME_MS); // Prevent shoot-through / backlash
-
-  currentState = STATE_DEPLOYING;
-  motionStartTime = millis();
-  activeDuration = deployTimeMs;
-
-  // Motor 1 pulls Red cable (Deploy / Contract)
-  // Motor 2 remains as-is (stopped / no reverse spin needed)
-  setMotor1(MOTOR_DIR_PULL, motorSpeedPwm);
-  stopMotor2();
-
-  Serial.printf("[CLAW] Started Deploy (Duration: %u ms | M1 Deploy PWM: %d, M2 Idle)\n",
-                activeDuration, motorSpeedPwm);
-  Hawa.log("[CLAW] Deploy started (M1 Deploy: " + String(motorSpeedPwm) + ", M2 Idle)");
-  Hawa.sendData("state", "DEPLOYING");
-}
-
-void startRetract() {
-  stopAllMotors();
-  delay(MOTOR_DEADTIME_MS);
-
-  currentState = STATE_RETRACTING;
-  motionStartTime = millis();
-  activeDuration = retractTimeMs;
-
-  // Motor 2 pulls Blue cable (Retract)
-  // Motor 1 remains as-is (stopped / no reverse spin needed)
-  setMotor2(MOTOR_DIR_PULL, motorSpeedPwm);
-  stopMotor1();
-
-  Serial.printf("[CLAW] Started Retract (Duration: %u ms | M2 Retract PWM: %d, M1 Idle)\n",
-                activeDuration, motorSpeedPwm);
-  Hawa.log("[CLAW] Retract started (M2 Retract: " + String(motorSpeedPwm) + ", M1 Idle)");
-  Hawa.sendData("state", "RETRACTING");
-}
-
-void startDemo() {
-  stopAllMotors();
-  delay(MOTOR_DEADTIME_MS);
-
-  currentState = STATE_DEMO_DEPLOYING;
-  motionStartTime = millis();
-  activeDuration = deployTimeMs;
-
-  // Demo Deploy: Only Motor 1 pulls, Motor 2 remains idle
-  setMotor1(MOTOR_DIR_PULL, motorSpeedPwm);
-  stopMotor2();
-
-  Serial.printf("[CLAW] Started Full Demo Sequence (Deploy phase - M1 only)\n");
-  Hawa.log("[CLAW] Auto Demo sequence initiated (Single-motor actuation)");
-  Hawa.sendData("state", "DEMO_DEPLOYING");
-}
-
-void triggerEmergencyStop() {
-  stopAllMotors();
-  currentState = STATE_EMERGENCY_STOP;
-  activeDuration = 0;
-  Serial.println("[CLAW] *** EMERGENCY STOP TRIGGERED ***");
-  Hawa.log("[CLAW] *** EMERGENCY STOP TRIGGERED ***");
-  Hawa.sendData("state", "EMERGENCY_STOP");
-}
-
-// Return human-readable state string
+// Human-readable state name string
 String getStateString() {
   switch (currentState) {
-    case STATE_IDLE:            return "IDLE";
-    case STATE_DEPLOYING:       return "DEPLOYING";
-    case STATE_DEPLOYED:        return "DEPLOYED";
-    case STATE_RETRACTING:      return "RETRACTING";
-    case STATE_RETRACTED:       return "RETRACTED";
-    case STATE_DEMO_DEPLOYING:  return "DEMO (DEPLOYING)";
-    case STATE_DEMO_HOLDING:    return "DEMO (HOLDING)";
-    case STATE_DEMO_RETRACTING: return "DEMO (RETRACTING)";
-    case STATE_EMERGENCY_STOP:  return "STOPPED";
-    default:                    return "UNKNOWN";
+    case STATE_IDLE:          return "IDLE";
+    case STATE_STEP1_M1_CW:   return "STEP 1: MOTOR 1 CLOCKWISE";
+    case STATE_STEP2_M1_CCW:  return "STEP 2: MOTOR 1 ANTICLOCKWISE";
+    case STATE_STEP3_PAUSE:   return "STEP 3: ALL ROTATION PAUSED";
+    case STATE_STEP4_M2_CW:   return "STEP 4: MOTOR 2 CLOCKWISE";
+    case STATE_STEP5_M2_CCW:  return "STEP 5: MOTOR 2 ANTICLOCKWISE";
+    case STATE_HOMING:        return "HOMING (RETURNING TO 0)";
+    case STATE_EMERGENCY_STOP:return "EMERGENCY STOP";
+    default:                  return "UNKNOWN";
   }
 }
 
 // ==========================================
-// State Machine Update Loop (Non-blocking)
+// High-Level Motion Commands & Homing Logic
+// ==========================================
+
+void startCycle() {
+  stopAllMotors();
+  delay(MOTOR_DEADTIME_MS);
+
+  cycleEnabled = true;
+  currentState = STATE_STEP1_M1_CW;
+  currentStep = 1;
+  stepStartTime = millis();
+  stepDuration = rotationTimeMs;
+
+  setMotor1(MOTOR_DIR_CW, motorSpeedPwm);
+  stopMotor2();
+
+  Serial.printf("[CLAW] Cycle STARTED -> Step 1: Motor 1 CW for %u ms (PWM %d)\n",
+                rotationTimeMs, motorSpeedPwm);
+  Hawa.log("[CLAW] Cycle Started: Step 1 M1 CW");
+  Hawa.sendData("state", "STEP1_M1_CW");
+}
+
+// Math-based Homing: calculates net offset and reverses active motor to return to initial 0 rotation
+void stopCycleWithHoming() {
+  if (!cycleEnabled && currentState == STATE_IDLE) {
+    return;
+  }
+  cycleEnabled = false;
+
+  uint32_t now = millis();
+  uint32_t elapsed = (stepStartTime > 0 && now >= stepStartTime) ? (now - stepStartTime) : 0;
+
+  int motorToZero = 0;
+  int zeroDirection = MOTOR_DIR_CCW;
+  uint32_t zeroDuration = 0;
+
+  switch (currentState) {
+    case STATE_STEP1_M1_CW:
+      // Motor 1 turned CW for 'elapsed' ms.
+      // Net offset: +elapsed CW. To zero: rotate CCW for 'elapsed' ms.
+      motorToZero = 1;
+      zeroDirection = MOTOR_DIR_CCW;
+      zeroDuration = min(elapsed, rotationTimeMs);
+      break;
+
+    case STATE_STEP2_M1_CCW:
+      // Motor 1 completed rotationTimeMs in CW, and has reversed for 'elapsed' in CCW.
+      // Net offset: (rotationTimeMs - elapsed) in CW direction.
+      if (elapsed < rotationTimeMs) {
+        motorToZero = 1;
+        zeroDirection = MOTOR_DIR_CCW; // Keep reversing until 0 reached
+        zeroDuration = rotationTimeMs - elapsed;
+      } else {
+        motorToZero = 0;
+        zeroDuration = 0;
+      }
+      break;
+
+    case STATE_STEP3_PAUSE:
+      // In pause, Motor 1 already fully reversed to 0, and Motor 2 hasn't moved.
+      // Both motors are already at 0 rotation!
+      motorToZero = 0;
+      zeroDuration = 0;
+      break;
+
+    case STATE_STEP4_M2_CW:
+      // Motor 2 turned CW for 'elapsed' ms.
+      // Net offset: +elapsed CW. To zero: rotate CCW for 'elapsed' ms.
+      motorToZero = 2;
+      zeroDirection = MOTOR_DIR_CCW;
+      zeroDuration = min(elapsed, rotationTimeMs);
+      break;
+
+    case STATE_STEP5_M2_CCW:
+      // Motor 2 completed rotationTimeMs in CW, and has reversed for 'elapsed' in CCW.
+      // Net offset: (rotationTimeMs - elapsed) in CW direction.
+      if (elapsed < rotationTimeMs) {
+        motorToZero = 2;
+        zeroDirection = MOTOR_DIR_CCW; // Keep reversing until 0 reached
+        zeroDuration = rotationTimeMs - elapsed;
+      } else {
+        motorToZero = 0;
+        zeroDuration = 0;
+      }
+      break;
+
+    case STATE_HOMING:
+      // Already returning to 0, let homing finish
+      return;
+
+    default:
+      motorToZero = 0;
+      zeroDuration = 0;
+      break;
+  }
+
+  stopAllMotors();
+
+  if (motorToZero > 0 && zeroDuration > 30) {
+    currentState = STATE_HOMING;
+    currentStep = 0;
+    homingMotor = motorToZero;
+    homingDirection = zeroDirection;
+    homingDuration = zeroDuration;
+    homingStartTime = millis();
+
+    delay(MOTOR_DEADTIME_MS);
+    if (motorToZero == 1) {
+      setMotor1(zeroDirection, motorSpeedPwm);
+      stopMotor2();
+    } else {
+      setMotor2(zeroDirection, motorSpeedPwm);
+      stopMotor1();
+    }
+    Serial.printf("[CLAW] Homing Motor %d to 0 rotation: running CCW for %u ms\n",
+                  motorToZero, zeroDuration);
+    Hawa.log("[CLAW] Homing M" + String(motorToZero) + " to 0 for " + String(zeroDuration) + " ms");
+    Hawa.sendData("state", "HOMING");
+  } else {
+    currentState = STATE_IDLE;
+    currentStep = 0;
+    Serial.println("[CLAW] Cycle Stopped. Both motors verified at initial 0 rotation.");
+    Hawa.log("[CLAW] Stopped at initial 0 rotation");
+    Hawa.sendData("state", "IDLE");
+  }
+}
+
+void triggerEmergencyStop() {
+  stopAllMotors();
+  cycleEnabled = false;
+  currentState = STATE_EMERGENCY_STOP;
+  currentStep = 0;
+  Serial.println("[CLAW] *** EMERGENCY HARD STOP TRIGGERED ***");
+  Hawa.log("[CLAW] Emergency Stop triggered");
+  Hawa.sendData("state", "EMERGENCY_STOP");
+}
+
+// ==========================================
+// Non-Blocking State Machine Update Loop
 // ==========================================
 void updateStateMachine() {
   uint32_t now = millis();
-  uint32_t elapsed = now - motionStartTime;
+  uint32_t elapsed = (stepStartTime > 0) ? (now - stepStartTime) : 0;
 
   switch (currentState) {
-    case STATE_DEPLOYING:
-      if (elapsed >= activeDuration) {
+    case STATE_STEP1_M1_CW:
+      if (elapsed >= rotationTimeMs) {
         stopAllMotors();
-        currentState = STATE_DEPLOYED;
-        activeDuration = 0;
-        Serial.println("[CLAW] Deploy cycle finished.");
-        Hawa.log("[CLAW] Deploy completed");
-        Hawa.sendData("state", "DEPLOYED");
+        delay(MOTOR_DEADTIME_MS);
+        currentState = STATE_STEP2_M1_CCW;
+        currentStep = 2;
+        stepStartTime = millis();
+        stepDuration = rotationTimeMs;
+        setMotor1(MOTOR_DIR_CCW, motorSpeedPwm);
+        stopMotor2();
+        Serial.printf("[CLAW] Step 2: Motor 1 CCW for %u ms\n", rotationTimeMs);
+        Hawa.sendData("state", "STEP2_M1_CCW");
       }
       break;
 
-    case STATE_RETRACTING:
-      if (elapsed >= activeDuration) {
+    case STATE_STEP2_M1_CCW:
+      if (elapsed >= rotationTimeMs) {
         stopAllMotors();
-        currentState = STATE_RETRACTED;
-        activeDuration = 0;
-        Serial.println("[CLAW] Retract cycle finished.");
-        Hawa.log("[CLAW] Retract completed");
-        Hawa.sendData("state", "RETRACTED");
+        delay(MOTOR_DEADTIME_MS);
+        currentState = STATE_STEP3_PAUSE;
+        currentStep = 3;
+        stepStartTime = millis();
+        stepDuration = pauseTimeMs;
+        Serial.printf("[CLAW] Step 3: All rotation PAUSED for %u ms\n", pauseTimeMs);
+        Hawa.sendData("state", "STEP3_PAUSE");
       }
       break;
 
-    case STATE_DEMO_DEPLOYING:
-      if (elapsed >= activeDuration) {
-        stopAllMotors();
-        currentState = STATE_DEMO_HOLDING;
-        motionStartTime = millis();
-        activeDuration = demoHoldMs;
-        Serial.printf("[CLAW] Demo: Holding claws open for %u ms...\n", demoHoldMs);
-        Hawa.sendData("state", "DEMO_HOLDING");
-      }
-      break;
-
-    case STATE_DEMO_HOLDING:
-      if (elapsed >= activeDuration) {
-        currentState = STATE_DEMO_RETRACTING;
-        motionStartTime = millis();
-        activeDuration = retractTimeMs;
-        // Demo Retract: Motor 2 pulls Blue cable, Motor 1 remains idle
-        setMotor2(MOTOR_DIR_PULL, motorSpeedPwm);
+    case STATE_STEP3_PAUSE:
+      if (elapsed >= pauseTimeMs) {
+        currentState = STATE_STEP4_M2_CW;
+        currentStep = 4;
+        stepStartTime = millis();
+        stepDuration = rotationTimeMs;
+        setMotor2(MOTOR_DIR_CW, motorSpeedPwm);
         stopMotor1();
-        Serial.println("[CLAW] Demo: Retracting claws (M2 Retract only, M1 Idle)...");
-        Hawa.sendData("state", "DEMO_RETRACTING");
+        Serial.printf("[CLAW] Step 4: Motor 2 CW for %u ms\n", rotationTimeMs);
+        Hawa.sendData("state", "STEP4_M2_CW");
       }
       break;
 
-    case STATE_DEMO_RETRACTING:
-      if (elapsed >= activeDuration) {
+    case STATE_STEP4_M2_CW:
+      if (elapsed >= rotationTimeMs) {
+        stopAllMotors();
+        delay(MOTOR_DEADTIME_MS);
+        currentState = STATE_STEP5_M2_CCW;
+        currentStep = 5;
+        stepStartTime = millis();
+        stepDuration = rotationTimeMs;
+        setMotor2(MOTOR_DIR_CCW, motorSpeedPwm);
+        stopMotor1();
+        Serial.printf("[CLAW] Step 5: Motor 2 CCW for %u ms\n", rotationTimeMs);
+        Hawa.sendData("state", "STEP5_M2_CCW");
+      }
+      break;
+
+    case STATE_STEP5_M2_CCW:
+      if (elapsed >= rotationTimeMs) {
+        stopAllMotors();
+        delay(MOTOR_DEADTIME_MS);
+        // Step 6: Loop back to Step 1 if cycle is still enabled
+        if (cycleEnabled) {
+          currentState = STATE_STEP1_M1_CW;
+          currentStep = 1;
+          stepStartTime = millis();
+          stepDuration = rotationTimeMs;
+          setMotor1(MOTOR_DIR_CW, motorSpeedPwm);
+          stopMotor2();
+          Serial.printf("[CLAW] Step 6 -> Looping back to Step 1: Motor 1 CW (%u ms)\n", rotationTimeMs);
+          Hawa.sendData("state", "STEP1_M1_CW");
+        } else {
+          currentState = STATE_IDLE;
+          currentStep = 0;
+          Serial.println("[CLAW] Sequence complete. Both motors at 0 rotation.");
+          Hawa.sendData("state", "IDLE");
+        }
+      }
+      break;
+
+    case STATE_HOMING:
+      if (millis() - homingStartTime >= homingDuration) {
         stopAllMotors();
         currentState = STATE_IDLE;
-        activeDuration = 0;
-        Serial.println("[CLAW] Demo sequence complete. Ready.");
-        Hawa.log("[CLAW] Demo sequence completed");
+        currentStep = 0;
+        Serial.println("[CLAW] Homing complete! Both motors returned to initial 0 rotation.");
+        Hawa.log("[CLAW] Homing finished at 0 rotation");
         Hawa.sendData("state", "IDLE");
       }
       break;
 
     case STATE_IDLE:
-    case STATE_DEPLOYED:
-    case STATE_RETRACTED:
     case STATE_EMERGENCY_STOP:
     default:
-      // Inactive states
       break;
   }
 }
@@ -297,20 +445,37 @@ void handleRoot() {
 
 void handleStatus() {
   uint32_t now = millis();
-  uint32_t elapsed = (activeDuration > 0) ? (now - motionStartTime) : 0;
-  uint32_t remaining = (elapsed < activeDuration) ? (activeDuration - elapsed) : 0;
+  uint32_t elapsed = 0;
+  uint32_t duration = 0;
+
+  if (currentState == STATE_HOMING) {
+    elapsed = (now >= homingStartTime) ? (now - homingStartTime) : 0;
+    duration = homingDuration;
+  } else if (currentStep >= 1 && currentStep <= 5) {
+    elapsed = (now >= stepStartTime) ? (now - stepStartTime) : 0;
+    duration = stepDuration;
+  }
+
+  uint32_t remaining = (elapsed < duration) ? (duration - elapsed) : 0;
+  int progress = (duration > 0) ? constrain((int)((elapsed * 100) / duration), 0, 100) : 0;
 
   bool isWifiConnected = (WiFi.status() == WL_CONNECTED);
 
   String json = "{";
+  json += "\"enabled\":" + String(cycleEnabled ? "true" : "false") + ",";
   json += "\"state\":\"" + getStateString() + "\",";
+  json += "\"step\":" + String(currentStep) + ",";
+  json += "\"is_homing\":" + String(currentState == STATE_HOMING ? "true" : "false") + ",";
+  json += "\"rotation_time\":" + String(rotationTimeMs) + ",";
+  json += "\"pause_time\":" + String(pauseTimeMs) + ",";
+  json += "\"speed\":" + String(motorSpeedPwm) + ",";
+  json += "\"step_elapsed\":" + String(elapsed) + ",";
+  json += "\"step_duration\":" + String(duration) + ",";
+  json += "\"step_remaining\":" + String(remaining) + ",";
+  json += "\"step_progress\":" + String(progress) + ",";
   json += "\"m1_pwm\":" + String(currentM1Pwm) + ",";
   json += "\"m2_pwm\":" + String(currentM2Pwm) + ",";
-  json += "\"target_pwm\":" + String(motorSpeedPwm) + ",";
-  json += "\"unwind_pwm\":" + String(unwindSpeedPwm) + ",";
-  json += "\"total_duration\":" + String(activeDuration) + ",";
-  json += "\"remaining\":" + String(remaining) + ",";
-  // Wi-Fi and Hawa Wireless Status
+  // Wireless Status
   json += "\"wifi_connected\":" + String(isWifiConnected ? "true" : "false") + ",";
   json += "\"wifi_ssid\":\"" + (isWifiConnected ? WiFi.SSID() : Hawa.getSsid()) + "\",";
   json += "\"station_ip\":\"" + (isWifiConnected ? WiFi.localIP().toString() : "") + "\",";
@@ -327,51 +492,77 @@ void handleStatus() {
   server.send(200, "application/json", json);
 }
 
-void handleDeploy() {
+void handleToggle() {
   triggerCommandBlink(400);
-  startDeploy();
-  server.send(200, "text/plain", "OK");
-}
 
-void handleRetract() {
-  triggerCommandBlink(400);
-  startRetract();
-  server.send(200, "text/plain", "OK");
-}
+  if (server.hasArg("state")) {
+    String s = server.arg("state");
+    s.toLowerCase();
+    if (s == "1" || s == "true" || s == "on") {
+      startCycle();
+    } else {
+      stopCycleWithHoming();
+    }
+  } else {
+    // Parameterless toggle flip
+    if (cycleEnabled) {
+      stopCycleWithHoming();
+    } else {
+      startCycle();
+    }
+  }
 
-void handleDemo() {
-  triggerCommandBlink(500);
-  startDemo();
-  server.send(200, "text/plain", "OK");
-}
-
-void handleStop() {
-  triggerCommandBlink(400);
-  triggerEmergencyStop();
-  server.send(200, "text/plain", "OK");
+  handleStatus();
 }
 
 void handleConfig() {
   triggerCommandBlink(300);
-  if (server.hasArg("pwm")) {
+  bool changed = false;
+
+  // Parameter x: Rotation Time
+  if (server.hasArg("rotation_time")) {
+    rotationTimeMs = constrain(server.arg("rotation_time").toInt(), 300, 30000);
+    changed = true;
+  } else if (server.hasArg("x")) {
+    rotationTimeMs = constrain(server.arg("x").toInt(), 300, 30000);
+    changed = true;
+  }
+
+  // Parameter y: Pause Interval
+  if (server.hasArg("pause_time")) {
+    pauseTimeMs = constrain(server.arg("pause_time").toInt(), 0, 30000);
+    changed = true;
+  } else if (server.hasArg("y")) {
+    pauseTimeMs = constrain(server.arg("y").toInt(), 0, 30000);
+    changed = true;
+  }
+
+  // Motor Speed / PWM
+  if (server.hasArg("speed")) {
+    motorSpeedPwm = constrain(server.arg("speed").toInt(), 200, 1023);
+    changed = true;
+  } else if (server.hasArg("pwm")) {
     motorSpeedPwm = constrain(server.arg("pwm").toInt(), 200, 1023);
-    unwindSpeedPwm = motorSpeedPwm; // Follow main speed by default
+    changed = true;
   }
-  if (server.hasArg("unwind_pwm")) {
-    unwindSpeedPwm = constrain(server.arg("unwind_pwm").toInt(), 100, 1023);
+
+  if (changed) {
+    savePersistentSettings();
   }
-  if (server.hasArg("deploy")) {
-    deployTimeMs = constrain(server.arg("deploy").toInt(), 500, 15000);
-  }
-  if (server.hasArg("retract")) {
-    retractTimeMs = constrain(server.arg("retract").toInt(), 500, 15000);
-  }
-  server.send(200, "text/plain", "CONFIG_UPDATED");
+
+  handleStatus();
+}
+
+void handleEmergencyStop() {
+  triggerCommandBlink(400);
+  triggerEmergencyStop();
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", "STOPPED");
 }
 
 // Wi-Fi Network Scan
 void handleWifiScan() {
-  int n = WiFi.scanNetworks(false, false); // synchronous scan for immediate response
+  int n = WiFi.scanNetworks(false, false);
   String json = "[";
   for (int i = 0; i < n; ++i) {
     if (i > 0) json += ",";
@@ -388,7 +579,7 @@ void handleWifiScan() {
   server.send(200, "application/json", json);
 }
 
-// Wi-Fi Credentials Provisioning from Web Page
+// Wi-Fi Credentials Provisioning
 void handleWifiSave() {
   triggerCommandBlink(500);
   String ssid = server.hasArg("ssid") ? server.arg("ssid") : "";
@@ -407,21 +598,18 @@ void handleWifiSave() {
     return;
   }
 
-  Serial.printf("[WiFi] Provisioning request from Web Page -> SSID: %s\n", ssid.c_str());
-
+  Serial.printf("[WiFi] Provisioning request -> SSID: %s\n", ssid.c_str());
   if (serverUrl.length() == 0) {
     serverUrl = "wss://hawa-platform.onrender.com/ws";
   }
 
-  // Save to persistent storage through Hawa
   Hawa.saveCredentials(ssid, pass, serverUrl, devName);
 
-  // Attempt connection in background while keeping AP intact
   WiFi.mode(WIFI_AP_STA);
   WiFi.disconnect();
   WiFi.begin(ssid.c_str(), pass.c_str());
 
-  Hawa.log("[WIFI] New credentials saved from Web Dashboard for SSID: " + ssid);
+  Hawa.log("[WIFI] New credentials saved for SSID: " + ssid);
 
   String resp = "{\"status\":\"ok\",\"message\":\"Wi-Fi settings saved. Connecting to " + ssid + "...\"}";
   server.sendHeader("Access-Control-Allow-Origin", "*");
@@ -433,10 +621,10 @@ void handleWifiClear() {
   triggerCommandBlink(500);
   Hawa.clearCredentials();
   WiFi.disconnect();
-  Serial.println("[WiFi] Credentials wiped via Web Page request.");
+  Serial.println("[WiFi] Credentials wiped.");
 
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", "{\"status\":\"ok\",\"message\":\"Wi-Fi credentials cleared. Device running in AP mode.\"}");
+  server.send(200, "application/json", "{\"status\":\"ok\",\"message\":\"Wi-Fi credentials cleared.\"}");
 }
 
 // Remote Reboot Handler
@@ -456,7 +644,7 @@ void setup() {
   Serial.begin(115200);
   delay(200);
   Serial.println("\n\n========================================");
-  Serial.println("  PROJECT CLAW — ESP8266 INITIALIZING   ");
+  Serial.println("   PROJECT CLAW — ESP8266 INITIALIZING  ");
   Serial.println("========================================");
 
   // Configure Motor Pins
@@ -473,11 +661,14 @@ void setup() {
   }
 #endif
 
-  // Set PWM Frequency (1 kHz standard for smooth BTS7960 switching)
+  // Set PWM Frequency (1 kHz standard for BTS7960)
   analogWriteFreq(1000);
 
-  // Ensure motors start completely stopped
+  // Ensure motors start completely stopped at 0 rotation
   stopAllMotors();
+
+  // Load persistent settings (Parameter x, y, and PWM) from EEPROM
+  loadPersistentSettings();
 
   // Initialize Dual AP + STA Wi-Fi Mode so local AP is always available
   WiFi.mode(WIFI_AP_STA);
@@ -497,25 +688,30 @@ void setup() {
   Hawa.begin();
 
   // Register remote Hawa Cloud commands
-  Hawa.onCommand("deploy", [](const String& val) {
+  Hawa.onCommand("toggle", [](const String& val) {
     triggerCommandBlink(400);
-    Hawa.log("[HAWA CMD] Deploy requested from cloud");
-    startDeploy();
+    if (cycleEnabled) {
+      Hawa.log("[HAWA CMD] Cycle OFF requested -> Homing to 0");
+      stopCycleWithHoming();
+    } else {
+      Hawa.log("[HAWA CMD] Cycle ON requested");
+      startCycle();
+    }
   });
-  Hawa.onCommand("retract", [](const String& val) {
+  Hawa.onCommand("on", [](const String& val) {
     triggerCommandBlink(400);
-    Hawa.log("[HAWA CMD] Retract requested from cloud");
-    startRetract();
+    Hawa.log("[HAWA CMD] Cycle ON requested");
+    startCycle();
+  });
+  Hawa.onCommand("off", [](const String& val) {
+    triggerCommandBlink(400);
+    Hawa.log("[HAWA CMD] Cycle OFF requested -> Homing to 0");
+    stopCycleWithHoming();
   });
   Hawa.onCommand("stop", [](const String& val) {
     triggerCommandBlink(400);
-    Hawa.log("[HAWA CMD] Emergency stop requested from cloud");
+    Hawa.log("[HAWA CMD] Emergency stop requested");
     triggerEmergencyStop();
-  });
-  Hawa.onCommand("demo", [](const String& val) {
-    triggerCommandBlink(500);
-    Hawa.log("[HAWA CMD] Auto demo requested from cloud");
-    startDemo();
   });
 
   // Start mDNS responder
@@ -533,11 +729,15 @@ void setup() {
   server.on("/ncsi.txt", HTTP_GET, handleRoot);
 
   server.on("/api/status", HTTP_GET, handleStatus);
-  server.on("/api/deploy", HTTP_POST, handleDeploy);
-  server.on("/api/retract", HTTP_POST, handleRetract);
-  server.on("/api/demo", HTTP_POST, handleDemo);
-  server.on("/api/stop", HTTP_POST, handleStop);
+  server.on("/api/toggle", HTTP_POST, handleToggle);
   server.on("/api/config", HTTP_POST, handleConfig);
+  server.on("/api/stop", HTTP_POST, handleEmergencyStop);
+  server.on("/api/emergency-stop", HTTP_POST, handleEmergencyStop);
+
+  // Backward-compatible endpoints for old scripts
+  server.on("/api/deploy", HTTP_POST, handleToggle);
+  server.on("/api/retract", HTTP_POST, handleToggle);
+  server.on("/api/demo", HTTP_POST, handleToggle);
 
   // Wi-Fi Provisioning & Hawa Cloud API Endpoints
   server.on("/api/wifi-scan", HTTP_GET, handleWifiScan);
@@ -560,7 +760,7 @@ void setup() {
 
   server.begin();
   Serial.println("[HTTP] Web Server & OTA Updater (/update) started on port 80.");
-  Serial.println("[CLAW] System initialized in IDLE state.");
+  Serial.println("[CLAW] System ready in IDLE state (0 rotation).");
 }
 
 // ==========================================
@@ -573,25 +773,37 @@ void handleSerialCommands() {
       if (serialBuffer.length() > 0) {
         serialBuffer.trim();
         serialBuffer.toUpperCase();
-        if (serialBuffer == "DEPLOY") {
+
+        if (serialBuffer == "ON" || serialBuffer == "START") {
           triggerCommandBlink(400);
-          startDeploy();
-        } else if (serialBuffer == "RETRACT") {
+          startCycle();
+        } else if (serialBuffer == "OFF" || serialBuffer == "STOP") {
           triggerCommandBlink(400);
-          startRetract();
-        } else if (serialBuffer == "STOP") {
+          stopCycleWithHoming();
+        } else if (serialBuffer == "TOGGLE") {
+          triggerCommandBlink(400);
+          if (cycleEnabled) stopCycleWithHoming(); else startCycle();
+        } else if (serialBuffer == "KILL" || serialBuffer == "EMERGENCY") {
           triggerCommandBlink(400);
           triggerEmergencyStop();
-        } else if (serialBuffer == "DEMO") {
-          triggerCommandBlink(500);
-          startDemo();
-        } else if (serialBuffer.startsWith("SET_PWM=")) {
-          triggerCommandBlink(300);
-          int p = serialBuffer.substring(8).toInt();
-          if (p >= 200 && p <= 1023) {
-            motorSpeedPwm = p;
-            unwindSpeedPwm = p;
-            Serial.printf("[CONFIG] Motor PWM set to %d\n", p);
+        } else if (serialBuffer.startsWith("SET_X=")) {
+          int val = serialBuffer.substring(6).toInt();
+          if (val >= 300 && val <= 30000) {
+            rotationTimeMs = val;
+            savePersistentSettings();
+          }
+        } else if (serialBuffer.startsWith("SET_Y=")) {
+          int val = serialBuffer.substring(6).toInt();
+          if (val >= 0 && val <= 30000) {
+            pauseTimeMs = val;
+            savePersistentSettings();
+          }
+        } else if (serialBuffer.startsWith("SET_PWM=") || serialBuffer.startsWith("SET_SPEED=")) {
+          int idx = serialBuffer.indexOf('=');
+          int val = serialBuffer.substring(idx + 1).toInt();
+          if (val >= 200 && val <= 1023) {
+            motorSpeedPwm = val;
+            savePersistentSettings();
           }
         }
         serialBuffer = "";
@@ -622,7 +834,7 @@ void loop() {
   updateStateMachine();
 
   // ==========================================
-  // Inbuilt Status LED Indication & Web Activity
+  // Inbuilt Status LED Indication
   // ==========================================
   uint32_t now = millis();
 
@@ -649,9 +861,19 @@ void loop() {
 #endif
     }
   }
-  // 3. Active Motion (Motors Running): Fast active blinking (80ms)
-  // Continuously blinks while web app deploy/retract/demo is executing
-  else if (abs(currentM1Pwm) > 0 || abs(currentM2Pwm) > 0) {
+  // 3. Homing State: Smooth alert pulse (150ms)
+  else if (currentState == STATE_HOMING) {
+    if (now - lastLedBlink >= 150) {
+      lastLedBlink = now;
+      int s = !digitalRead(PIN_LED_STATUS);
+      digitalWrite(PIN_LED_STATUS, s);
+#ifdef LED_BUILTIN
+      if (LED_BUILTIN != PIN_LED_STATUS) digitalWrite(LED_BUILTIN, s);
+#endif
+    }
+  }
+  // 4. Active Motion (Sequence Running): Fast active blinking (80ms)
+  else if (currentStep > 0 && (abs(currentM1Pwm) > 0 || abs(currentM2Pwm) > 0)) {
     if (now - lastLedBlink >= 80) {
       lastLedBlink = now;
       int s = !digitalRead(PIN_LED_STATUS);
@@ -661,7 +883,7 @@ void loop() {
 #endif
     }
   }
-  // 4. Idle State: Subtle heartbeat pulse once every second
+  // 5. Idle State: Heartbeat pulse once every second
   else {
     if (now - lastLedBlink >= 1000) {
       lastLedBlink = now;

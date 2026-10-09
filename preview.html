@@ -19,8 +19,8 @@
     <!-- Workbench Card Controller Window -->
     <main class="workbench-card" id="workbench-card">
 
-      <!-- Workbench Titlebar -->
-      <header class="workbench">
+      <!-- Workbench Titlebar Header -->
+      <header class="workbench-titlebar">
         <div class="titlebar-left">
           <div class="window-dots">
             <span class="window-square-dot dot-red"></span>
@@ -44,7 +44,7 @@
             <span id="nav-wifi-label">WI-FI</span>
           </button>
 
-          <!-- Small SVG OTA Feature Button -->
+          <!-- OTA Direct Link Button -->
           <a href="/update" target="_blank" class="btn-ota" title="OTA Firmware Update (/update)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
               stroke-linejoin="round">
@@ -55,13 +55,13 @@
             <span>OTA</span>
           </a>
 
-          <!-- Live Status Badge with Pulsing Dot (No Emojis) -->
+          <!-- Live Status Badge -->
           <span class="status-pill" id="status-pill">
-            <span class="status-pulse-dot"></span>
-            <span>READY</span>
+            <span class="status-pulse-dot" id="status-pulse-dot"></span>
+            <span id="status-text">OFF (0° ROTATION)</span>
           </span>
 
-          <!-- Theme Toggle with Pure SVG Moon/Sun (No Emojis) -->
+          <!-- Theme Toggle Button -->
           <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()"
             title="Toggle Light / Dark Mode">
             <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -85,113 +85,181 @@
         </div>
       </header>
 
-      <!-- Workbench Content -->
+      <!-- Main Controller Content -->
       <div class="workbench-content">
 
-        <!-- Tactile Motion Buttons: Hold-To-Run Dead-Man Actuation -->
-        <div class="tactile-actions-grid">
-          <button class="btn-tactile btn-tactile-deploy" id="btn-deploy" title="Hold to Deploy Claws (Release to Stop)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-              stroke-linejoin="round">
-              <line x1="12" y1="19" x2="12" y2="5"></line>
-              <polyline points="5 12 12 5 19 12"></polyline>
-            </svg>
-            <span>DEPLOY CLAWS</span>
-          </button>
+        <!-- Master Power / Cycle Toggle Card -->
+        <div class="master-toggle-card" id="master-toggle-card">
+          <div class="master-toggle-header">
+            <div class="master-status-group">
+              <span class="master-badge" id="master-state-tag">STOPPED</span>
+              <h2 class="master-title" id="master-status-title">SYSTEM IDLE</h2>
+              <p class="master-desc" id="master-status-desc">Both motors resting at calibrated 0 initial rotation.</p>
+            </div>
 
-          <button class="btn-tactile btn-tactile-retract" id="btn-retract"
-            title="Hold to Retract Claws (Release to Stop)">
+            <!-- Tactile Hero Switch Button -->
+            <button class="hero-toggle-switch" id="master-switch-btn" onclick="toggleMasterCycle()"
+              title="Click to Toggle Automation Cycle">
+              <span class="switch-track">
+                <span class="switch-handle" id="switch-handle"></span>
+              </span>
+              <span class="switch-label" id="switch-text">OFF</span>
+            </button>
+          </div>
+
+          <!-- Sequence Step Pipeline Visualizer -->
+          <div class="sequence-pipeline-box">
+            <div class="pipeline-header">
+              <span class="pipeline-title">AUTOMATION SEQUENCE (6 STEPS)</span>
+              <span class="pipeline-step-active" id="pipeline-active-label">STEP 0 / 5</span>
+            </div>
+
+            <div class="pipeline-steps-grid">
+              <!-- Step 1 -->
+              <div class="pipeline-step-card" id="step-card-1">
+                <div class="step-card-num">01</div>
+                <div class="step-card-body">
+                  <span class="step-card-motor">MOTOR 1</span>
+                  <span class="step-card-action">CLOCKWISE</span>
+                </div>
+                <div class="step-progress-bar"><div class="step-progress-fill" id="fill-step-1"></div></div>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="pipeline-step-card" id="step-card-2">
+                <div class="step-card-num">02</div>
+                <div class="step-card-body">
+                  <span class="step-card-motor">MOTOR 1</span>
+                  <span class="step-card-action">ANTICLOCKWISE</span>
+                </div>
+                <div class="step-progress-bar"><div class="step-progress-fill" id="fill-step-2"></div></div>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="pipeline-step-card" id="step-card-3">
+                <div class="step-card-num">03</div>
+                <div class="step-card-body">
+                  <span class="step-card-motor">ALL MOTORS</span>
+                  <span class="step-card-action">PAUSED</span>
+                </div>
+                <div class="step-progress-bar"><div class="step-progress-fill" id="fill-step-3"></div></div>
+              </div>
+
+              <!-- Step 4 -->
+              <div class="pipeline-step-card" id="step-card-4">
+                <div class="step-card-num">04</div>
+                <div class="step-card-body">
+                  <span class="step-card-motor">MOTOR 2</span>
+                  <span class="step-card-action">CLOCKWISE</span>
+                </div>
+                <div class="step-progress-bar"><div class="step-progress-fill" id="fill-step-4"></div></div>
+              </div>
+
+              <!-- Step 5 -->
+              <div class="pipeline-step-card" id="step-card-5">
+                <div class="step-card-num">05</div>
+                <div class="step-card-body">
+                  <span class="step-card-motor">MOTOR 2</span>
+                  <span class="step-card-action">ANTICLOCKWISE</span>
+                </div>
+                <div class="step-progress-bar"><div class="step-progress-fill" id="fill-step-5"></div></div>
+              </div>
+            </div>
+
+            <!-- Loopback Indicator Bar -->
+            <div class="pipeline-loop-indicator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px;">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span>Step 6: Automatically loops continuously back to Step 1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parameters Sliders Card (Saved to Flash EEPROM) -->
+        <div class="parameters-card">
+          <div class="parameters-header">
+            <div class="parameters-header-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line>
+                <line x1="9" y1="8" x2="15" y2="8"></line>
+                <line x1="17" y1="16" x2="23" y2="16"></line>
+              </svg>
+              <span>CYCLE PARAMETERS</span>
+            </div>
+            <span class="eeprom-chip" title="Data stored non-volatilely on ESP8266 flash EEPROM">MCU SAVED</span>
+          </div>
+
+          <!-- Parameter 1: Rotation Time (x) -->
+          <div class="slider-row">
+            <div class="slider-labels-row">
+              <div class="slider-title-col">
+                <span class="slider-name">Rotation Time</span>
+                <span class="slider-desc">CW &amp; CCW duration per motor</span>
+              </div>
+              <span class="slider-val-badge" id="rotation-val-label">3.0 s</span>
+            </div>
+            <input type="range" min="500" max="10000" step="100" value="3000" class="custom-range-slider"
+              id="slider-rotation-time" oninput="onRotationSliderInput(this.value)"
+              onchange="saveParametersToHardware()">
+          </div>
+
+          <!-- Parameter 2: Pause Interval (y) -->
+          <div class="slider-row">
+            <div class="slider-labels-row">
+              <div class="slider-title-col">
+                <span class="slider-name">Pause Interval</span>
+                <span class="slider-desc">Rest delay between motor cycles</span>
+              </div>
+              <span class="slider-val-badge" id="pause-val-label">2.0 s</span>
+            </div>
+            <input type="range" min="0" max="10000" step="100" value="2000" class="custom-range-slider"
+              id="slider-pause-time" oninput="onPauseSliderInput(this.value)"
+              onchange="saveParametersToHardware()">
+          </div>
+
+          <!-- Parameter 3: Motor Speed (PWM) -->
+          <div class="slider-row">
+            <div class="slider-labels-row">
+              <div class="slider-title-col">
+                <span class="slider-name">Motor Drive Speed</span>
+                <span class="slider-desc">BTS7960 PWM drive power</span>
+              </div>
+              <span class="slider-val-badge" id="speed-val-label">83% (850 PWM)</span>
+            </div>
+            <input type="range" min="300" max="1023" step="1" value="850" class="custom-range-slider"
+              id="slider-motor-speed" oninput="onSpeedSliderInput(this.value)"
+              onchange="saveParametersToHardware()">
+          </div>
+
+          <!-- Apply & Save Parameters Action Button -->
+          <button class="btn-save-params" id="btn-save-params" onclick="saveParametersToHardware()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
               stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <polyline points="19 12 12 19 5 12"></polyline>
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
             </svg>
-            <span>RETRACT CLAWS</span>
+            <span>SAVE TO MCU FLASH</span>
           </button>
         </div>
 
-        <!-- Auto Routine & Emergency Stop -->
-        <div class="actions-full-row">
-          <button class="btn-auto-demo" onclick="triggerAutoDemo()">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-            <span>AUTO DEMO SEQUENCE</span>
-          </button>
-
-          <button class="btn-emergency-stop" onclick="triggerEmergencyStop()" title="Instant Hardware Motor Cutoff">
+        <!-- Emergency Kill Switch Action -->
+        <div class="emergency-action-box">
+          <button class="btn-emergency-stop" onclick="triggerEmergencyHardStop()"
+            title="Instantaneous Motor Cutoff & Safety Stop">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <rect x="5" y="5" width="14" height="14" rx="2" />
             </svg>
-            <span>EMERGENCY STOP</span>
-          </button>
-        </div>
-
-        <!-- Motor Speed Slider Box & Presets -->
-        <div class="speed-control-box">
-          <div class="speed-box-header">
-            <span class="speed-box-title">MOTOR SPEED PWM (BTS7960)</span>
-            <span class="speed-box-readout" id="speed-val-display">83% (850 PWM)</span>
-          </div>
-
-          <input type="range" min="300" max="1023" value="850" class="custom-range-slider" id="speed-slider"
-            oninput="onSpeedSliderChange(this.value)">
-
-          <div class="speed-presets-row">
-            <button class="btn-speed-preset" onclick="setSpeedPreset(512, this)">50%</button>
-            <button class="btn-speed-preset" onclick="setSpeedPreset(768, this)">75%</button>
-            <button class="btn-speed-preset active" onclick="setSpeedPreset(850, this)">83%</button>
-            <button class="btn-speed-preset" onclick="setSpeedPreset(1023, this)">100%</button>
-          </div>
-        </div>
-
-        <!-- Permanently Revealed Motion Timing & Calibration (No Hiding / No Arrow) -->
-        <div class="timing-calibration-box">
-          <div class="timing-box-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
-              stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"></circle>
-              <polyline points="12 7 12 12 15 15"></polyline>
-            </svg>
-            <span>MOTION TIMING &amp; CALIBRATION</span>
-          </div>
-
-          <div class="timing-row">
-            <div class="timing-row-labels">
-              <span>Deploy Duration</span>
-              <span class="timing-val-tag" id="deploy-time-label">3.0 s</span>
-            </div>
-            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider"
-              id="deploy-slider"
-              oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
-          </div>
-
-          <div class="timing-row">
-            <div class="timing-row-labels">
-              <span>Retract Duration</span>
-              <span class="timing-val-tag" id="retract-time-label">3.0 s</span>
-            </div>
-            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider"
-              id="retract-slider"
-              oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
-          </div>
-
-          <div class="timing-row">
-            <div class="timing-row-labels">
-              <span>Demo Hold Duration</span>
-              <span class="timing-val-tag" id="hold-time-label">2.0 s</span>
-            </div>
-            <input type="range" min="1000" max="6000" step="100" value="2000" class="custom-range-slider"
-              id="hold-slider"
-              oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
-          </div>
-
-          <button class="btn-save-calib" onclick="saveCalibration()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-              stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span>APPLY CALIBRATION</span>
+            <span>EMERGENCY HARD STOP</span>
           </button>
         </div>
 
@@ -276,7 +344,6 @@
               <span id="scan-btn-text">SCAN</span>
             </button>
           </div>
-          <!-- Scanned Networks Dropdown Container -->
           <div class="scanned-networks-box" id="scanned-networks-box" style="display: none;"></div>
           <input type="text" class="form-control-input" id="input-wifi-ssid" placeholder="Enter Wi-Fi SSID"
             autocomplete="off" autocapitalize="none">
@@ -348,7 +415,7 @@
   </div>
 
   <!-- Toast Notification -->
-  <div class="toast-notice" id="toast-notice">Settings Applied</div>
+  <div class="toast-notice" id="toast-notice">Settings Saved</div>
 
   <script src="app.js"></script>
 </body>
