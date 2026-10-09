@@ -50,8 +50,22 @@ int currentM2Pwm = 0;
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
 
-// Status LED timing
+// Inbuilt Status LED Timing & Web Command Blinker
 uint32_t lastLedBlink = 0;
+uint32_t commandBlinkEndMs = 0;
+uint32_t lastCommandLedToggle = 0;
+bool commandLedState = false;
+
+// Trigger an immediate fast blinking burst on the inbuilt LED
+// whenever a command is sent from the web app or cloud/serial
+void triggerCommandBlink(uint32_t durationMs = 400) {
+  commandBlinkEndMs = millis() + durationMs;
+  commandLedState = true;
+  digitalWrite(PIN_LED_STATUS, LOW); // Active LOW on NodeMCU -> Turn ON
+#ifdef LED_BUILTIN
+  if (LED_BUILTIN != PIN_LED_STATUS) digitalWrite(LED_BUILTIN, LOW);
+#endif
+}
 
 // Serial Command Buffer
 String serialBuffer = "";
@@ -314,26 +328,31 @@ void handleStatus() {
 }
 
 void handleDeploy() {
+  triggerCommandBlink(400);
   startDeploy();
   server.send(200, "text/plain", "OK");
 }
 
 void handleRetract() {
+  triggerCommandBlink(400);
   startRetract();
   server.send(200, "text/plain", "OK");
 }
 
 void handleDemo() {
+  triggerCommandBlink(500);
   startDemo();
   server.send(200, "text/plain", "OK");
 }
 
 void handleStop() {
+  triggerCommandBlink(400);
   triggerEmergencyStop();
   server.send(200, "text/plain", "OK");
 }
 
 void handleConfig() {
+  triggerCommandBlink(300);
   if (server.hasArg("pwm")) {
     motorSpeedPwm = constrain(server.arg("pwm").toInt(), 200, 1023);
     unwindSpeedPwm = motorSpeedPwm; // Follow main speed by default
@@ -371,6 +390,7 @@ void handleWifiScan() {
 
 // Wi-Fi Credentials Provisioning from Web Page
 void handleWifiSave() {
+  triggerCommandBlink(500);
   String ssid = server.hasArg("ssid") ? server.arg("ssid") : "";
   String pass = server.hasArg("password") ? server.arg("password") : "";
   String serverUrl = server.hasArg("server") ? server.arg("server") : "";
@@ -410,6 +430,7 @@ void handleWifiSave() {
 
 // Clear Saved Wi-Fi Credentials
 void handleWifiClear() {
+  triggerCommandBlink(500);
   Hawa.clearCredentials();
   WiFi.disconnect();
   Serial.println("[WiFi] Credentials wiped via Web Page request.");
@@ -420,6 +441,7 @@ void handleWifiClear() {
 
 // Remote Reboot Handler
 void handleReboot() {
+  triggerCommandBlink(1000);
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", "{\"status\":\"ok\",\"message\":\"Rebooting hardware...\"}");
   delay(500);
@@ -443,6 +465,13 @@ void setup() {
   pinMode(PIN_M2_RPWM, OUTPUT);
   pinMode(PIN_M2_LPWM, OUTPUT);
   pinMode(PIN_LED_STATUS, OUTPUT);
+  digitalWrite(PIN_LED_STATUS, HIGH); // Off initially (Active LOW)
+#ifdef LED_BUILTIN
+  if (LED_BUILTIN != PIN_LED_STATUS) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+#endif
 
   // Set PWM Frequency (1 kHz standard for smooth BTS7960 switching)
   analogWriteFreq(1000);
@@ -469,18 +498,22 @@ void setup() {
 
   // Register remote Hawa Cloud commands
   Hawa.onCommand("deploy", [](const String& val) {
+    triggerCommandBlink(400);
     Hawa.log("[HAWA CMD] Deploy requested from cloud");
     startDeploy();
   });
   Hawa.onCommand("retract", [](const String& val) {
+    triggerCommandBlink(400);
     Hawa.log("[HAWA CMD] Retract requested from cloud");
     startRetract();
   });
   Hawa.onCommand("stop", [](const String& val) {
+    triggerCommandBlink(400);
     Hawa.log("[HAWA CMD] Emergency stop requested from cloud");
     triggerEmergencyStop();
   });
   Hawa.onCommand("demo", [](const String& val) {
+    triggerCommandBlink(500);
     Hawa.log("[HAWA CMD] Auto demo requested from cloud");
     startDemo();
   });
@@ -541,14 +574,19 @@ void handleSerialCommands() {
         serialBuffer.trim();
         serialBuffer.toUpperCase();
         if (serialBuffer == "DEPLOY") {
+          triggerCommandBlink(400);
           startDeploy();
         } else if (serialBuffer == "RETRACT") {
+          triggerCommandBlink(400);
           startRetract();
         } else if (serialBuffer == "STOP") {
+          triggerCommandBlink(400);
           triggerEmergencyStop();
         } else if (serialBuffer == "DEMO") {
+          triggerCommandBlink(500);
           startDemo();
         } else if (serialBuffer.startsWith("SET_PWM=")) {
+          triggerCommandBlink(300);
           int p = serialBuffer.substring(8).toInt();
           if (p >= 200 && p <= 1023) {
             motorSpeedPwm = p;
@@ -583,24 +621,59 @@ void loop() {
   // Run non-blocking motion state machine
   updateStateMachine();
 
-  // Status LED indication
+  // ==========================================
+  // Inbuilt Status LED Indication & Web Activity
+  // ==========================================
   uint32_t now = millis();
-  if (currentState == STATE_EMERGENCY_STOP) {
-    // Rapid flashing for emergency stop
+
+  // 1. Web / Serial Command Acknowledgement Strobe (Fast 50ms toggle)
+  if (now < commandBlinkEndMs) {
+    if (now - lastCommandLedToggle >= 50) {
+      lastCommandLedToggle = now;
+      commandLedState = !commandLedState;
+      int val = commandLedState ? LOW : HIGH;
+      digitalWrite(PIN_LED_STATUS, val);
+#ifdef LED_BUILTIN
+      if (LED_BUILTIN != PIN_LED_STATUS) digitalWrite(LED_BUILTIN, val);
+#endif
+    }
+  }
+  // 2. Emergency Stop State: Rapid warning strobe (100ms)
+  else if (currentState == STATE_EMERGENCY_STOP) {
     if (now - lastLedBlink >= 100) {
       lastLedBlink = now;
-      digitalWrite(PIN_LED_STATUS, !digitalRead(PIN_LED_STATUS));
+      int s = !digitalRead(PIN_LED_STATUS);
+      digitalWrite(PIN_LED_STATUS, s);
+#ifdef LED_BUILTIN
+      if (LED_BUILTIN != PIN_LED_STATUS) digitalWrite(LED_BUILTIN, s);
+#endif
     }
-  } else if (abs(currentM1Pwm) > 0 || abs(currentM2Pwm) > 0) {
-    // Solid ON when any motor is running (NodeMCU LED is active LOW)
-    digitalWrite(PIN_LED_STATUS, LOW);
-  } else {
-    // Gentle heartbeat blink when idle
+  }
+  // 3. Active Motion (Motors Running): Fast active blinking (80ms)
+  // Continuously blinks while web app deploy/retract/demo is executing
+  else if (abs(currentM1Pwm) > 0 || abs(currentM2Pwm) > 0) {
+    if (now - lastLedBlink >= 80) {
+      lastLedBlink = now;
+      int s = !digitalRead(PIN_LED_STATUS);
+      digitalWrite(PIN_LED_STATUS, s);
+#ifdef LED_BUILTIN
+      if (LED_BUILTIN != PIN_LED_STATUS) digitalWrite(LED_BUILTIN, s);
+#endif
+    }
+  }
+  // 4. Idle State: Subtle heartbeat pulse once every second
+  else {
     if (now - lastLedBlink >= 1000) {
       lastLedBlink = now;
       digitalWrite(PIN_LED_STATUS, LOW);
+#ifdef LED_BUILTIN
+      if (LED_BUILTIN != PIN_LED_STATUS) digitalWrite(LED_BUILTIN, LOW);
+#endif
       delay(20);
       digitalWrite(PIN_LED_STATUS, HIGH);
+#ifdef LED_BUILTIN
+      if (LED_BUILTIN != PIN_LED_STATUS) digitalWrite(LED_BUILTIN, HIGH);
+#endif
     }
   }
 }

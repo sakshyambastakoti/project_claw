@@ -3,9 +3,12 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Himalix Projects — Project CLAW Controller</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" media="print" onload="this.media='all'">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
+    media="print" onload="this.media='all'">
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -17,7 +20,7 @@
     <main class="workbench-card" id="workbench-card">
 
       <!-- Workbench Titlebar -->
-      <header class="workbench-titlebar">
+      <header class="workbench">
         <div class="titlebar-left">
           <div class="window-dots">
             <span class="window-square-dot dot-red"></span>
@@ -29,8 +32,10 @@
 
         <div class="titlebar-actions">
           <!-- Wi-Fi & Hawa Wireless Config Button -->
-          <button class="btn-wifi-nav" id="btn-wifi-nav" onclick="openWifiModal()" title="Configure Wi-Fi & Hawa Wireless OTA">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <button class="btn-wifi-nav" id="btn-wifi-nav" onclick="openWifiModal()"
+            title="Configure Wi-Fi & Hawa Wireless OTA">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
               <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
               <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
               <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
@@ -41,7 +46,8 @@
 
           <!-- Small SVG OTA Feature Button -->
           <a href="/update" target="_blank" class="btn-ota" title="OTA Firmware Update (/update)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -56,11 +62,14 @@
           </span>
 
           <!-- Theme Toggle with Pure SVG Moon/Sun (No Emojis) -->
-          <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
-            <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()"
+            title="Toggle Light / Dark Mode">
+            <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
-            <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" style="display:none;">
               <circle cx="12" cy="12" r="5"></circle>
               <line x1="12" y1="1" x2="12" y2="3"></line>
               <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -82,15 +91,18 @@
         <!-- Tactile Motion Buttons: Hold-To-Run Dead-Man Actuation -->
         <div class="tactile-actions-grid">
           <button class="btn-tactile btn-tactile-deploy" id="btn-deploy" title="Hold to Deploy Claws (Release to Stop)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
               <line x1="12" y1="19" x2="12" y2="5"></line>
               <polyline points="5 12 12 5 19 12"></polyline>
             </svg>
             <span>DEPLOY CLAWS</span>
           </button>
 
-          <button class="btn-tactile btn-tactile-retract" id="btn-retract" title="Hold to Retract Claws (Release to Stop)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <button class="btn-tactile btn-tactile-retract" id="btn-retract"
+            title="Hold to Retract Claws (Release to Stop)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <polyline points="19 12 12 19 5 12"></polyline>
             </svg>
@@ -136,7 +148,8 @@
         <!-- Permanently Revealed Motion Timing & Calibration (No Hiding / No Arrow) -->
         <div class="timing-calibration-box">
           <div class="timing-box-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+              stroke-linejoin="round">
               <circle cx="12" cy="12" r="9"></circle>
               <polyline points="12 7 12 12 15 15"></polyline>
             </svg>
@@ -148,7 +161,8 @@
               <span>Deploy Duration</span>
               <span class="timing-val-tag" id="deploy-time-label">3.0 s</span>
             </div>
-            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="deploy-slider"
+            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider"
+              id="deploy-slider"
               oninput="document.getElementById('deploy-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
           </div>
 
@@ -157,7 +171,8 @@
               <span>Retract Duration</span>
               <span class="timing-val-tag" id="retract-time-label">3.0 s</span>
             </div>
-            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider" id="retract-slider"
+            <input type="range" min="1000" max="8000" step="100" value="3000" class="custom-range-slider"
+              id="retract-slider"
               oninput="document.getElementById('retract-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
           </div>
 
@@ -166,12 +181,14 @@
               <span>Demo Hold Duration</span>
               <span class="timing-val-tag" id="hold-time-label">2.0 s</span>
             </div>
-            <input type="range" min="1000" max="6000" step="100" value="2000" class="custom-range-slider" id="hold-slider"
+            <input type="range" min="1000" max="6000" step="100" value="2000" class="custom-range-slider"
+              id="hold-slider"
               oninput="document.getElementById('hold-time-label').textContent = (this.value/1000).toFixed(1) + ' s'">
           </div>
 
           <button class="btn-save-calib" onclick="saveCalibration()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
             <span>APPLY CALIBRATION</span>
@@ -197,7 +214,8 @@
           <span class="modal-title">WIRELESS &amp; HAWA OTA</span>
         </div>
         <button class="btn-modal-close" onclick="closeWifiModal()" title="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -232,8 +250,13 @@
             <span class="telemetry-label">Hardware Device ID</span>
             <span class="telemetry-val">
               <code class="device-id-code" id="modal-device-id">hawa-esp8266-claw</code>
-              <button class="btn-copy-id" id="btn-copy-devid" onclick="copyDeviceId()" title="Click to copy pairing Device ID for hawa-platform.onrender.com">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px; height:11px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <button class="btn-copy-id" id="btn-copy-devid" onclick="copyDeviceId()"
+                title="Click to copy pairing Device ID for hawa-platform.onrender.com">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  style="width:11px; height:11px;">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
                 <span>COPY ID</span>
               </button>
             </span>
@@ -244,35 +267,43 @@
         <div class="field-group">
           <div class="field-label">
             <span>Wi-Fi Network (SSID)</span>
-            <button class="btn-inline-action" id="btn-scan-networks" onclick="scanWifiNetworks()" title="Scan Nearby Wi-Fi">
-              <svg id="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            <button class="btn-inline-action" id="btn-scan-networks" onclick="scanWifiNetworks()"
+              title="Scan Nearby Wi-Fi">
+              <svg id="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
               </svg>
               <span id="scan-btn-text">SCAN</span>
             </button>
           </div>
           <!-- Scanned Networks Dropdown Container -->
           <div class="scanned-networks-box" id="scanned-networks-box" style="display: none;"></div>
-          <input type="text" class="form-control-input" id="input-wifi-ssid" placeholder="Enter Wi-Fi SSID" autocomplete="off" autocapitalize="none">
+          <input type="text" class="form-control-input" id="input-wifi-ssid" placeholder="Enter Wi-Fi SSID"
+            autocomplete="off" autocapitalize="none">
         </div>
 
         <div class="field-group">
           <div class="field-label">
             <span>Wi-Fi Password</span>
-            <button class="btn-inline-action" onclick="togglePasswordVisibility()" title="Show/Hide Password" id="btn-toggle-pass" style="padding: 2px 6px; font-size: 9px;">SHOW</button>
+            <button class="btn-inline-action" onclick="togglePasswordVisibility()" title="Show/Hide Password"
+              id="btn-toggle-pass" style="padding: 2px 6px; font-size: 9px;">SHOW</button>
           </div>
-          <input type="password" class="form-control-input" id="input-wifi-pass" placeholder="Enter network password" autocomplete="off">
+          <input type="password" class="form-control-input" id="input-wifi-pass" placeholder="Enter network password"
+            autocomplete="off">
         </div>
 
         <div class="field-group">
           <div class="field-label">
             <span>Hawa Hub Gateway URL</span>
-            <button type="button" class="btn-inline-action" onclick="applyHawaCloudPreset()" title="Use Official Hawa Cloud">PRESET CLOUD</button>
+            <button type="button" class="btn-inline-action" onclick="applyHawaCloudPreset()"
+              title="Use Official Hawa Cloud">PRESET CLOUD</button>
           </div>
-          <input type="text" class="form-control-input" id="input-hawa-server" placeholder="wss://hawa-platform.onrender.com/ws" autocomplete="off" autocapitalize="none">
+          <input type="text" class="form-control-input" id="input-hawa-server"
+            placeholder="wss://hawa-platform.onrender.com/ws" autocomplete="off" autocapitalize="none">
           <div class="preset-helper-row">
             <span>Official Cloud:</span>
-            <a href="javascript:void(0)" class="preset-chip" onclick="applyHawaCloudPreset()" title="Click to apply official Hawa Cloud Hub">hawa-platform.onrender.com</a>
+            <a href="javascript:void(0)" class="preset-chip" onclick="applyHawaCloudPreset()"
+              title="Click to apply official Hawa Cloud Hub">hawa-platform.onrender.com</a>
           </div>
         </div>
 
@@ -280,27 +311,31 @@
           <div class="field-label">
             <span>Device Nickname (Optional)</span>
           </div>
-          <input type="text" class="form-control-input" id="input-device-name" placeholder="Project-CLAW" autocomplete="off">
+          <input type="text" class="form-control-input" id="input-device-name" placeholder="Project-CLAW"
+            autocomplete="off">
         </div>
 
         <!-- Modal Actions Footer -->
         <div class="modal-footer-actions">
           <button class="btn-modal-primary" onclick="saveWifiCredentials()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
             <span>CONNECT &amp; SAVE WI-FI</span>
           </button>
           <div class="modal-secondary-row">
             <button class="btn-modal-subtle" onclick="clearWifiCredentials()" title="Disconnect & Reset to AP">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" style="width:12px; height:12px;">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
               <span>CLEAR WI-FI</span>
             </button>
             <button class="btn-modal-subtle" onclick="rebootHardware()" title="Reboot Hardware">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" style="width:12px; height:12px;">
                 <path d="M23 4v6h-6"></path>
                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
               </svg>
