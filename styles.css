@@ -751,17 +751,6 @@ body {
   opacity: 0.9;
 }
 
-.btn-save-calib svg {
-  width: 13px;
-  height: 13px;
-  stroke: currentColor;
-}
-
-.btn-save-calib:active {
-  background: var(--btn-black-bg);
-  color: var(--btn-black-text);
-  transform: scale(0.97);
-}
 
 /* Toast Notification */
 .toast-notice {
