@@ -267,167 +267,395 @@ body {
   gap: 11px;
 }
 
-/* Tactile Claws Actuation Grid (Hold to Run) */
-.tactile-actions-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.btn-tactile {
+/* ==========================================================================
+   Master Power / Cycle Toggle Hero Card
+   ========================================================================== */
+.master-toggle-card {
   background: var(--surface-elevated);
   border: 1px solid var(--border-main);
   border-radius: var(--radius-md);
-  padding: 16px 10px;
-  color: var(--text-main);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
+  padding: 14px 14px 12px;
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.master-toggle-card.active {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2), 0 4px 14px rgba(16, 185, 129, 0.08);
+}
+
+.master-toggle-card.homing {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2), 0 4px 14px rgba(245, 158, 11, 0.08);
+}
+
+.master-toggle-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  min-height: 86px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-  transition: transform 0.08s ease, background 0.08s ease;
-  position: relative;
-  overflow: hidden;
+  gap: 12px;
 }
 
-.btn-tactile svg {
-  width: 24px;
-  height: 24px;
-  stroke: currentColor;
+.master-status-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.btn-tactile-deploy {
-  border-left: 5px solid var(--pixel-red);
+.master-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  display: inline-block;
+  width: fit-content;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
 }
 
-.btn-tactile-retract {
-  border-left: 5px solid var(--pixel-blue);
+.master-badge.badge-running {
+  color: var(--pixel-green);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
 }
 
-/* Tactile Press & Holding States (Visual Feedback during Hold-to-Run) */
-.btn-tactile:active,
-.btn-tactile.holding {
-  transform: scale(0.96);
+.master-badge.badge-homing {
+  color: var(--pixel-amber);
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.1);
 }
 
-.btn-tactile-deploy:active,
-.btn-tactile-deploy.holding {
-  background: rgba(225, 29, 72, 0.09);
-  border-color: var(--pixel-red);
-}
-
-.btn-tactile-retract:active,
-.btn-tactile-retract.holding {
-  background: rgba(37, 99, 235, 0.09);
-  border-color: var(--pixel-blue);
-}
-
-/* Auto Routine & Emergency Stop Row */
-.actions-full-row {
-  display: grid;
-  grid-template-columns: 1fr 1.25fr;
-  gap: 10px;
-}
-
-.btn-auto-demo {
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-dark);
-  border-radius: var(--radius-sm);
-  padding: 12px 10px;
+.master-title {
+  font-family: var(--font-dot);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
   color: var(--text-main);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.master-desc {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-sub);
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Tactile Hero Toggle Switch (ON / OFF) */
+.hero-toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-dark);
+  border-radius: 24px;
+  padding: 4px 10px 4px 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.switch-track {
+  width: 44px;
+  height: 24px;
+  background: var(--border-main);
+  border-radius: 12px;
+  position: relative;
+  transition: background-color 0.22s ease;
+  display: block;
+}
+
+.switch-handle {
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switch-label {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  min-height: 48px;
-  transition: all 0.1s ease;
+  letter-spacing: 0.8px;
+  color: var(--text-sub);
+  min-width: 24px;
+  text-align: center;
 }
 
-.btn-auto-demo svg {
-  width: 14px;
-  height: 14px;
+.hero-toggle-switch.active {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: var(--pixel-green);
 }
 
-.btn-auto-demo:active {
-  transform: scale(0.97);
-  background: rgba(0, 0, 0, 0.05);
+.hero-toggle-switch.active .switch-track {
+  background: var(--pixel-green);
 }
 
-.btn-emergency-stop {
-  background: var(--pixel-red);
-  border: 1px solid var(--pixel-red);
+.hero-toggle-switch.active .switch-handle {
+  transform: translateX(20px);
+}
+
+.hero-toggle-switch.active .switch-label {
+  color: var(--pixel-green);
+}
+
+.hero-toggle-switch.homing {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: var(--pixel-amber);
+}
+
+.hero-toggle-switch.homing .switch-track {
+  background: var(--pixel-amber);
+}
+
+/* ==========================================================================
+   Sequence Step Pipeline Visualizer
+   ========================================================================== */
+.sequence-pipeline-box {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 12px 10px;
-  color: #ffffff;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  min-height: 48px;
-  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.28);
-  transition: all 0.1s ease;
-}
-
-.btn-emergency-stop svg {
-  width: 14px;
-  height: 14px;
-}
-
-.btn-emergency-stop:active {
-  transform: scale(0.96);
-  opacity: 0.9;
-}
-
-/* Speed Slider Box */
-.speed-control-box {
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-main);
-  border-radius: var(--radius-md);
-  padding: 11px 14px 13px;
+  padding: 9px 10px;
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  gap: 8px;
 }
 
-.speed-box-header {
+.pipeline-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.speed-box-title {
+.pipeline-title {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.pipeline-step-active {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.pipeline-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.pipeline-step-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-main);
+  border-radius: 3px;
+  padding: 6px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.step-card-num {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--text-dim);
+  line-height: 1;
+}
+
+.step-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 3px 0 4px;
+}
+
+.step-card-motor {
+  font-family: var(--font-dot);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.step-card-action {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  color: var(--text-sub);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.step-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: auto;
+}
+
+.step-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: var(--text-dim);
+  transition: width 0.1s linear;
+}
+
+/* Active Step Card Highlights */
+.pipeline-step-card.active {
+  border-color: var(--text-main);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.pipeline-step-card.active.step-m1 {
+  border-color: var(--pixel-red);
+  background: rgba(225, 29, 72, 0.06);
+}
+.pipeline-step-card.active.step-m1 .step-progress-fill {
+  background: var(--pixel-red);
+}
+
+.pipeline-step-card.active.step-pause {
+  border-color: var(--pixel-amber);
+  background: rgba(245, 158, 11, 0.06);
+}
+.pipeline-step-card.active.step-pause .step-progress-fill {
+  background: var(--pixel-amber);
+}
+
+.pipeline-step-card.active.step-m2 {
+  border-color: var(--pixel-blue);
+  background: rgba(37, 99, 235, 0.06);
+}
+.pipeline-step-card.active.step-m2 .step-progress-fill {
+  background: var(--pixel-blue);
+}
+
+.pipeline-loop-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  padding-top: 2px;
+}
+
+/* ==========================================================================
+   Parameters Sliders Card (Non-Volatile Flash)
+   ========================================================================== */
+.parameters-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-md);
+  padding: 12px 14px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.parameters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.parameters-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.parameters-header-left svg {
+  width: 14px;
+  height: 14px;
+}
+
+.eeprom-chip {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 2px 5px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--pixel-green);
+  border-radius: 2px;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.slider-labels-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.slider-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.slider-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.slider-desc {
+  font-family: var(--font-mono);
+  font-size: 9px;
   color: var(--text-sub);
 }
 
-.speed-box-readout {
+.slider-val-badge {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
+  padding: 2px 6px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-sm);
   color: var(--text-main);
 }
 
@@ -452,89 +680,7 @@ body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
-.speed-presets-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-
-.btn-speed-preset {
-  background: var(--surface-card);
-  border: 1px solid var(--border-main);
-  border-radius: var(--radius-sm);
-  padding: 7px 4px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--text-sub);
-  cursor: pointer;
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.1s ease;
-}
-
-.btn-speed-preset:active {
-  transform: scale(0.96);
-}
-
-.btn-speed-preset.active {
-  background: var(--btn-black-bg);
-  color: var(--btn-black-text);
-  border-color: var(--btn-black-bg);
-}
-
-/* Permanently Revealed Motion Timing & Calibration Box */
-.timing-calibration-box {
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-main);
-  border-radius: var(--radius-md);
-  padding: 11px 14px 13px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-}
-
-.timing-box-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: var(--text-main);
-}
-
-.timing-box-header svg {
-  width: 13px;
-  height: 13px;
-  stroke: currentColor;
-}
-
-.timing-row {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.timing-row-labels {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-sub);
-}
-
-.timing-val-tag {
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.btn-save-calib {
+.btn-save-params {
   background: var(--surface-card);
   border: 1px solid var(--border-dark);
   border-radius: var(--radius-sm);
@@ -552,6 +698,57 @@ body {
   cursor: pointer;
   margin-top: 2px;
   transition: all 0.12s ease;
+}
+
+.btn-save-params svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+}
+
+.btn-save-params:active {
+  background: var(--btn-black-bg);
+  color: var(--btn-black-text);
+  transform: scale(0.97);
+}
+
+/* ==========================================================================
+   Emergency Hard Cutoff
+   ========================================================================== */
+.emergency-action-box {
+  display: flex;
+}
+
+.btn-emergency-stop {
+  width: 100%;
+  background: var(--pixel-red);
+  border: 1px solid var(--pixel-red);
+  border-radius: var(--radius-sm);
+  padding: 12px 10px;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  min-height: 44px;
+  box-shadow: 0 3px 12px rgba(225, 29, 72, 0.22);
+  transition: all 0.1s ease;
+}
+
+.btn-emergency-stop svg {
+  width: 13px;
+  height: 13px;
+}
+
+.btn-emergency-stop:active {
+  transform: scale(0.97);
+  opacity: 0.9;
 }
 
 .btn-save-calib svg {
