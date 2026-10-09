@@ -14,6 +14,7 @@ static void globalOtaStatus(bool success, const String& message) {
 HawaClass::HawaClass() {
     _isOtaRunning = false;
     _isConnected = false;
+    _webSocketConfigured = false;
     _lastHeartbeat = 0;
 }
 
@@ -41,7 +42,6 @@ void HawaClass::begin() {
         Serial.printf("[HAWA] Loaded Stored Wi-Fi: %s\n", _config.ssid.c_str());
         Serial.printf("[HAWA] Loaded Hub Server:   %s\n", _config.serverUrl.c_str());
         _initNetwork();
-        _setupWebSocket();
     } else {
         Serial.println("[HAWA] No Wi-Fi credentials in flash.");
         Serial.println("[HAWA] Ready for Web Dashboard provisioning or serial setup.");
@@ -57,68 +57,93 @@ void HawaClass::begin(const char* ssid, const char* pass, const char* serverUrl,
 void HawaClass::connectWifi(const String& newSsid, const String& newPass, const String& newServer, const String& newName) {
     _config.saveCredentials(newSsid, newPass, newServer, newName);
     _initNetwork();
-    _setupWebSocket();
 }
 
 void HawaClass::_initNetwork() {
     // Preserve SoftAP while connecting Station (Dual AP+STA mode)
     WiFi.mode(WIFI_AP_STA);
     WiFi.begin(_config.ssid.c_str(), _config.password.c_str());
-
-    Serial.printf("[WIFI] Connecting to %s", _config.ssid.c_str());
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-        delay(300);
-        Serial.print(".");
-        attempts++;
-        checkSerialCommands();
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.printf("\n[WIFI] Connected! Station IP: %s | RSSI: %d dBm\n", 
-                      WiFi.localIP().toString().c_str(), WiFi.RSSI());
-    } else {
-        Serial.println("\n[WIFI] Station connection pending. Access Point remains active.");
-    }
+    _webSocketConfigured = false;
+    Serial.printf("[WIFI] Connecting in background to %s (AP remains active)\n", _config.ssid.c_str());
 }
 
 void HawaClass::_setupWebSocket() {
     String server = _config.serverUrl;
-    if (server.length() == 0) return;
+    server.trim();
+    if (server.length() == 0) {
+        server = "wss://hawa-platform.onrender.com/ws";
+    }
 
     bool isSecure = false;
+    bool schemeSpecified = false;
+
     if (server.startsWith("wss://")) {
         isSecure = true;
+        schemeSpecified = true;
         server.remove(0, 6);
-    } else if (server.startsWith("ws://")) {
-        isSecure = false;
-        server.remove(0, 5);
     } else if (server.startsWith("https://")) {
         isSecure = true;
+        schemeSpecified = true;
         server.remove(0, 8);
+    } else if (server.startsWith("ws://")) {
+        isSecure = false;
+        schemeSpecified = true;
+        server.remove(0, 5);
     } else if (server.startsWith("http://")) {
         isSecure = false;
+        schemeSpecified = true;
         server.remove(0, 7);
     }
 
+    // Extract path if present
     int slashIdx = server.indexOf('/');
     String host = (slashIdx >= 0) ? server.substring(0, slashIdx) : server;
     String path = (slashIdx >= 0) ? server.substring(slashIdx) : "/ws";
     if (path.length() == 0 || path == "/") path = "/ws";
 
-    int port = isSecure ? 443 : 80;
+    int port = -1;
     int colonIdx = host.indexOf(':');
     if (colonIdx >= 0) {
         port = host.substring(colonIdx + 1).toInt();
         host = host.substring(0, colonIdx);
     }
 
-    Serial.printf("[WS] Configuring %s://%s:%d%s\n", isSecure ? "wss" : "ws", host.c_str(), port, path.c_str());
+    // Auto-detect secure vs unencrypted
+    if (!schemeSpecified) {
+        bool isLocal = host.startsWith("192.168.") || 
+                       host.startsWith("10.") || 
+                       host.startsWith("172.") || 
+                       host.startsWith("127.") || 
+                       host.endsWith(".local") || 
+                       host == "localhost";
+        if (port == 443) {
+            isSecure = true;
+        } else if (port == 80) {
+            isSecure = false;
+        } else if (isLocal) {
+            isSecure = false;
+        } else {
+            // Internet/cloud servers default to secure TLS
+            isSecure = true;
+        }
+    }
+
+    // Cloudflare/Render servers ALWAYS enforce TLS (HTTP 301 otherwise)
+    if (host.indexOf("onrender.com") >= 0 || host.indexOf("herokuapp.com") >= 0) {
+        isSecure = true;
+    }
+
+    if (port <= 0) {
+        port = isSecure ? 443 : 80;
+    }
+
+    Serial.printf("[WS] Connecting to %s://%s:%d%s (Free Heap: %u bytes)\n",
+                  isSecure ? "wss" : "ws", host.c_str(), port, path.c_str(), ESP.getFreeHeap());
 
     if (isSecure) {
-        _webSocket.beginSSL(host.c_str(), port, path.c_str());
+        _webSocket.beginSSL(host.c_str(), port, path.c_str(), NULL, "arduino");
     } else {
-        _webSocket.begin(host.c_str(), port, path.c_str());
+        _webSocket.begin(host.c_str(), port, path.c_str(), "arduino");
     }
 
     _webSocket.onEvent([this](WStype_t type, uint8_t * payload, size_t length) {
@@ -132,12 +157,22 @@ void HawaClass::loop() {
     checkSerialCommands();
 
     if (WiFi.status() == WL_CONNECTED) {
-        _webSocket.loop();
-
-        if (millis() - _lastHeartbeat > 15000 && !_isOtaRunning && _isConnected) {
-            _lastHeartbeat = millis();
-            _sendHeartbeat();
+        if (!_webSocketConfigured && _config.serverUrl.length() > 0) {
+            _setupWebSocket();
+            _webSocketConfigured = true;
         }
+
+        if (_webSocketConfigured) {
+            _webSocket.loop();
+
+            if (millis() - _lastHeartbeat > 15000 && !_isOtaRunning && _isConnected) {
+                _lastHeartbeat = millis();
+                _sendHeartbeat();
+            }
+        }
+    } else {
+        _webSocketConfigured = false;
+        _isConnected = false;
     }
 }
 
@@ -145,7 +180,7 @@ void HawaClass::_webSocketEvent(WStype_t type, uint8_t * payload, size_t length)
     switch (type) {
         case WStype_DISCONNECTED:
             _isConnected = false;
-            Serial.println("[WS] Disconnected from Hawa Hub");
+            Serial.printf("[WS] Disconnected from Hawa Hub (Free Heap: %u bytes)\n", ESP.getFreeHeap());
             break;
 
         case WStype_CONNECTED:
@@ -154,12 +189,23 @@ void HawaClass::_webSocketEvent(WStype_t type, uint8_t * payload, size_t length)
             _sendClientHello();
             break;
 
+        case WStype_ERROR:
+            _isConnected = false;
+            Serial.printf("[WS] Connection Error: %s\n", (payload && length > 0) ? (const char*)payload : "Handshake/TLS failed");
+            break;
+
         case WStype_TEXT: {
             DynamicJsonDocument doc(1024);
             DeserializationError err = deserializeJson(doc, payload);
             if (err) return;
 
             String msgType = doc["type"] | "";
+
+            // Registration Confirmed
+            if (msgType == "SERVER_HELLO_ACK") {
+                Serial.printf("[HAWA] Hub registration confirmed for device: %s\n", _deviceId.c_str());
+                log("[HAWA] Device online and paired with Hawa Hub.");
+            }
 
             // 1. Over-The-Air Update Command
             if (msgType == "OTA_START") {

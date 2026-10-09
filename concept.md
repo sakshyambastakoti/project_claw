@@ -51,7 +51,13 @@ The upper 12 V 100 RPM Johnson motor drives the **red cable system** through a s
 
 The lower 12 V 100 RPM Johnson motor drives the **blue cable system** through a spool/drum. It pulls the second cable network and returns/retracts the six pipe/claw assemblies.
 
-The motors must not mechanically fight each other. Software should prevent conflicting commands and include timeouts and end-position detection.
+### Coordinated Antagonistic Operation
+
+Because both motors are high-torque Johnson geared motors with high gear reduction, they cannot be backdriven by cable tension alone. Therefore, the two motors operate as a coordinated antagonistic pair:
+- **During Deploy (Motor 1 active):** Motor 1 turns forward (`MOTOR_DIR_PULL`) to wind the red cable, while Motor 2 turns in reverse (`MOTOR_DIR_RELEASE`) to actively unwind / pay out the blue cable from its spool.
+- **During Retract (Motor 2 active):** Motor 2 turns forward (`MOTOR_DIR_PULL`) to wind the blue cable, while Motor 1 turns in reverse (`MOTOR_DIR_RELEASE`) to actively unwind / pay out the red cable from its spool.
+- **On Stop / Idle / Hold:** Both motors stop simultaneously (`stopAllMotors()`) to hold the claws in their current position.
+- This prevents cable tension lockup and ensures smooth bidirectional movement.
 
 ## 4. Electronics
 

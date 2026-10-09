@@ -5,9 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Himalix Projects — Project CLAW Controller</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -234,7 +232,10 @@
             <span class="telemetry-label">Hardware Device ID</span>
             <span class="telemetry-val">
               <code class="device-id-code" id="modal-device-id">hawa-esp8266-claw</code>
-              <button class="btn-inline-action" style="padding: 2px 6px; font-size: 9px;" onclick="copyDeviceId()" title="Copy Device ID">COPY</button>
+              <button class="btn-copy-id" id="btn-copy-devid" onclick="copyDeviceId()" title="Click to copy pairing Device ID for hawa-platform.onrender.com">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px; height:11px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>COPY ID</span>
+              </button>
             </span>
           </div>
         </div>
@@ -265,9 +266,14 @@
 
         <div class="field-group">
           <div class="field-label">
-            <span>Hawa Hub Gateway URL (Optional)</span>
+            <span>Hawa Hub Gateway URL</span>
+            <button type="button" class="btn-inline-action" onclick="applyHawaCloudPreset()" title="Use Official Hawa Cloud">PRESET CLOUD</button>
           </div>
-          <input type="text" class="form-control-input" id="input-hawa-server" placeholder="wss://your-hawa-hub.com/ws" autocomplete="off">
+          <input type="text" class="form-control-input" id="input-hawa-server" placeholder="wss://hawa-platform.onrender.com/ws" autocomplete="off" autocapitalize="none">
+          <div class="preset-helper-row">
+            <span>Official Cloud:</span>
+            <a href="javascript:void(0)" class="preset-chip" onclick="applyHawaCloudPreset()" title="Click to apply official Hawa Cloud Hub">hawa-platform.onrender.com</a>
+          </div>
         </div>
 
         <div class="field-group">

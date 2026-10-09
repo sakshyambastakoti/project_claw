@@ -14,17 +14,80 @@
 #include <WiFi.h>
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
 #endif
 
 typedef std::function<void(const String& payload)> HawaCommandCallback;
 
+#if defined(ESP8266)
+class HawaWebSocketsClient : public WebSocketsClient {
+public:
+    void loop() {
+        if(_port == 0) return;
+        WEBSOCKETS_YIELD();
+        if(!clientIsConnected(&_client)) {
+            if((millis() - _lastConnectionFail) < _reconnectInterval) {
+                return;
+            }
+
+            if(_client.isSSL) {
+                if(_client.ssl) {
+                    delete _client.ssl;
+                    _client.ssl = NULL;
+                    _client.tcp = NULL;
+                }
+                _client.ssl = new WiFiClientSecure();
+                _client.tcp = _client.ssl;
+                // BearSSL memory tuning for ESP8266:
+                // Reduce buffer from 16KB default to 4KB RX / 1KB TX to fit reliably in heap
+                _client.ssl->setBufferSizes(4096, 1024);
+                _client.ssl->setInsecure();
+            } else {
+                if(_client.tcp) {
+                    delete _client.tcp;
+                    _client.tcp = NULL;
+                }
+                _client.tcp = new WiFiClient();
+            }
+
+            if(!_client.tcp) {
+                return;
+            }
+            WEBSOCKETS_YIELD();
+            if(_client.tcp->connect(_host.c_str(), _port)) {
+                connectedCb();
+                _lastConnectionFail = 0;
+            } else {
+                connectFailedCb();
+                _lastConnectionFail = millis();
+            }
+        } else {
+            handleClientData();
+            WEBSOCKETS_YIELD();
+            if(_client.status == WSC_CONNECTED) {
+                handleHBPing();
+                handleHBTimeout(&_client);
+            }
+        }
+    }
+
+    void connectFailedCb() {
+        WebSocketsClient::connectFailedCb();
+        runCbEvent(WStype_ERROR, (uint8_t*)"Connect failed", 14);
+    }
+};
+#else
+typedef WebSocketsClient HawaWebSocketsClient;
+#endif
+
 class HawaClass {
 private:
     HawaConfig _config;
-    WebSocketsClient _webSocket;
+    HawaWebSocketsClient _webSocket;
     String _deviceId;
     bool _isOtaRunning;
     bool _isConnected;
+    bool _webSocketConfigured;
     unsigned long _lastHeartbeat;
     std::map<String, HawaCommandCallback> _commandCallbacks;
 
@@ -88,6 +151,9 @@ public:
     // Save credentials from web page or API
     void saveCredentials(const String& newSsid, const String& newPass, const String& newServer = "", const String& newName = "") {
         _config.saveCredentials(newSsid, newPass, newServer, newName);
+        _webSocketConfigured = false;
+        _isConnected = false;
+        _webSocket.disconnect();
     }
 
     // Connect to Wi-Fi without wiping AP mode

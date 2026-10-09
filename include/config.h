@@ -21,10 +21,15 @@
 // Default Timing & Motor Motion Parameters
 // ==========================================
 #define DEFAULT_PWM_SPEED       850    // Speed range: 0 - 1023 (ESP8266 default PWM range)
+#define DEFAULT_UNWIND_SPEED_PWM 850   // Speed for opposing motor in reverse (spool payout)
 #define DEFAULT_DEPLOY_TIME_MS  3000   // Time Motor 1 runs to contract/deploy claws
 #define DEFAULT_RETRACT_TIME_MS 3000   // Time Motor 2 runs to retract claws
 #define DEFAULT_DEMO_HOLD_MS    2000   // Time claws stay held open in demo mode
 #define MOTOR_DEADTIME_MS       150    // Safe pause between switching motor states
+
+// Motor Direction Polarities (+1 = Pull / Contract / Retract, -1 = Release / Reverse)
+#define MOTOR_DIR_PULL          1
+#define MOTOR_DIR_RELEASE      -1
 
 // ==========================================
 // Wi-Fi Access Point Configuration

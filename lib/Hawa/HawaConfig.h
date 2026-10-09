@@ -55,6 +55,9 @@ public:
         ssid = String(sBuf);
         password = String(pBuf);
         serverUrl = String(uBuf);
+        if (serverUrl.length() == 0) {
+            serverUrl = "wss://hawa-platform.onrender.com/ws";
+        }
         deviceName = (String(nBuf).length() > 0) ? String(nBuf) : "Project-CLAW";
 #endif
     }

@@ -24,7 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   setupHoldToRunButtons();
   setupGlobalAntiSelect();
-  setInterval(liveSyncStatus, 500);
+  setTimeout(() => {
+    liveSyncStatus();
+    setInterval(liveSyncStatus, 1200);
+  }, 300);
 });
 
 // ==========================================
@@ -424,16 +427,27 @@ function togglePasswordVisibility() {
   }
 }
 
+function applyHawaCloudPreset() {
+  const inputServer = document.getElementById('input-hawa-server');
+  if (inputServer) {
+    inputServer.value = 'wss://hawa-platform.onrender.com/ws';
+    inputServer.focus();
+    showToast('PRESET APPLIED: HAWA CLOUD');
+  }
+}
+
 function copyDeviceId() {
-  const devId = document.getElementById('modal-device-id')?.textContent;
-  if (devId && navigator.clipboard) {
-    navigator.clipboard.writeText(devId).then(() => {
-      showToast('DEVICE ID COPIED');
-    }).catch(() => {
-      showToast(devId);
-    });
-  } else if (devId) {
-    showToast(devId);
+  const devId = document.getElementById('modal-device-id')?.textContent?.trim();
+  if (devId) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(devId).then(() => {
+        showToast(`COPIED ID: ${devId}`);
+      }).catch(() => {
+        prompt('Copy Device Pairing ID:', devId);
+      });
+    } else {
+      prompt('Copy Device Pairing ID:', devId);
+    }
   }
 }
 
@@ -485,7 +499,7 @@ async function scanWifiNetworks() {
 async function saveWifiCredentials() {
   const ssid = document.getElementById('input-wifi-ssid')?.value?.trim();
   const pass = document.getElementById('input-wifi-pass')?.value || '';
-  const server = document.getElementById('input-hawa-server')?.value?.trim() || '';
+  let server = document.getElementById('input-hawa-server')?.value?.trim() || '';
   const name = document.getElementById('input-device-name')?.value?.trim() || '';
 
   if (!ssid) {
@@ -493,7 +507,27 @@ async function saveWifiCredentials() {
     return;
   }
 
-  showToast(`SAVING WI-FI: ${ssid}...`);
+  // Auto-normalize Hawa Server URL (e.g. hawa-platform.onrender.com -> wss://hawa-platform.onrender.com/ws)
+  if (!server || server === 'hawa-platform.onrender.com') {
+    server = 'wss://hawa-platform.onrender.com/ws';
+  } else if (!server.startsWith('ws://') && !server.startsWith('wss://')) {
+    if (server.startsWith('https://')) {
+      server = 'wss://' + server.substring(8);
+    } else if (server.startsWith('http://')) {
+      server = 'ws://' + server.substring(7);
+    } else {
+      server = 'wss://' + server;
+    }
+    if (!server.includes('/', 8)) {
+      server += '/ws';
+    }
+  }
+
+  // Update input field to show normalized URL
+  const inputServer = document.getElementById('input-hawa-server');
+  if (inputServer) inputServer.value = server;
+
+  showToast(`CONNECTING TO WI-FI & HAWA CLOUD...`);
 
   const params = new URLSearchParams();
   params.append('ssid', ssid);

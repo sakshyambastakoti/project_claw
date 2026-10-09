@@ -3,9 +3,14 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266HTTPUpdateServer.h>
+#include <DNSServer.h>
 #include <Hawa.h>
 #include "config.h"
 #include "web_page.h"
+
+// Captive Portal DNS Server
+const byte DNS_PORT = 53;
+DNSServer dnsServer;
 
 // ==========================================
 // System States Definition
@@ -28,6 +33,7 @@ enum SystemState {
 SystemState currentState = STATE_IDLE;
 
 int motorSpeedPwm     = DEFAULT_PWM_SPEED;
+int unwindSpeedPwm    = DEFAULT_UNWIND_SPEED_PWM;
 uint32_t deployTimeMs = DEFAULT_DEPLOY_TIME_MS;
 uint32_t retractTimeMs= DEFAULT_RETRACT_TIME_MS;
 uint32_t demoHoldMs   = DEFAULT_DEMO_HOLD_MS;
@@ -36,7 +42,7 @@ uint32_t demoHoldMs   = DEFAULT_DEMO_HOLD_MS;
 uint32_t motionStartTime = 0;
 uint32_t activeDuration  = 0;
 
-// Current Live PWM outputs
+// Current Live PWM outputs (positive = pull/forward, negative = unwind/reverse)
 int currentM1Pwm = 0;
 int currentM2Pwm = 0;
 
@@ -46,6 +52,9 @@ ESP8266HTTPUpdateServer httpUpdater;
 
 // Status LED timing
 uint32_t lastLedBlink = 0;
+
+// Serial Command Buffer
+String serialBuffer = "";
 
 // ==========================================
 // Low-Level Motor Driver Control Functions
@@ -71,36 +80,36 @@ void stopAllMotors() {
   stopMotor2();
 }
 
-// Control Motor 1 (direction: 1 = Forward/Contract, -1 = Reverse)
+// Control Motor 1 (direction: +1 = Forward/Contract, -1 = Reverse/Release)
 void setMotor1(int direction, int pwm) {
   pwm = constrain(pwm, 0, 1023);
   if (direction > 0) {
     analogWrite(PIN_M1_LPWM, 0);
     analogWrite(PIN_M1_RPWM, pwm);
+    currentM1Pwm = pwm;
   } else if (direction < 0) {
     analogWrite(PIN_M1_RPWM, 0);
     analogWrite(PIN_M1_LPWM, pwm);
+    currentM1Pwm = -pwm;
   } else {
     stopMotor1();
-    return;
   }
-  currentM1Pwm = pwm;
 }
 
-// Control Motor 2 (direction: 1 = Forward/Retract, -1 = Reverse)
+// Control Motor 2 (direction: +1 = Forward/Retract, -1 = Reverse/Release)
 void setMotor2(int direction, int pwm) {
   pwm = constrain(pwm, 0, 1023);
   if (direction > 0) {
     analogWrite(PIN_M2_LPWM, 0);
     analogWrite(PIN_M2_RPWM, pwm);
+    currentM2Pwm = pwm;
   } else if (direction < 0) {
     analogWrite(PIN_M2_RPWM, 0);
     analogWrite(PIN_M2_LPWM, pwm);
+    currentM2Pwm = -pwm;
   } else {
     stopMotor2();
-    return;
   }
-  currentM2Pwm = pwm;
 }
 
 // ==========================================
@@ -115,9 +124,14 @@ void startDeploy() {
   motionStartTime = millis();
   activeDuration = deployTimeMs;
 
-  setMotor1(1, motorSpeedPwm); // Motor 1 pulls Red cable
-  Serial.printf("[CLAW] Started Deploy (Duration: %u ms, PWM: %d)\n", activeDuration, motorSpeedPwm);
-  Hawa.log("[CLAW] Deploy started (PWM: " + String(motorSpeedPwm) + ")");
+  // Motor 1 pulls Red cable (Deploy / Contract)
+  // Motor 2 runs in reverse to unwind / pay out Blue cable
+  setMotor1(MOTOR_DIR_PULL, motorSpeedPwm);
+  setMotor2(MOTOR_DIR_RELEASE, unwindSpeedPwm);
+
+  Serial.printf("[CLAW] Started Deploy (Duration: %u ms | M1 Pull PWM: %d, M2 Unwind PWM: %d)\n",
+                activeDuration, motorSpeedPwm, unwindSpeedPwm);
+  Hawa.log("[CLAW] Deploy started (M1 Pull: " + String(motorSpeedPwm) + ", M2 Unwind: " + String(unwindSpeedPwm) + ")");
   Hawa.sendData("state", "DEPLOYING");
 }
 
@@ -129,9 +143,14 @@ void startRetract() {
   motionStartTime = millis();
   activeDuration = retractTimeMs;
 
-  setMotor2(1, motorSpeedPwm); // Motor 2 pulls Blue cable
-  Serial.printf("[CLAW] Started Retract (Duration: %u ms, PWM: %d)\n", activeDuration, motorSpeedPwm);
-  Hawa.log("[CLAW] Retract started (PWM: " + String(motorSpeedPwm) + ")");
+  // Motor 2 pulls Blue cable (Retract)
+  // Motor 1 runs in reverse to unwind / pay out Red cable
+  setMotor2(MOTOR_DIR_PULL, motorSpeedPwm);
+  setMotor1(MOTOR_DIR_RELEASE, unwindSpeedPwm);
+
+  Serial.printf("[CLAW] Started Retract (Duration: %u ms | M2 Pull PWM: %d, M1 Unwind PWM: %d)\n",
+                activeDuration, motorSpeedPwm, unwindSpeedPwm);
+  Hawa.log("[CLAW] Retract started (M2 Pull: " + String(motorSpeedPwm) + ", M1 Unwind: " + String(unwindSpeedPwm) + ")");
   Hawa.sendData("state", "RETRACTING");
 }
 
@@ -143,8 +162,11 @@ void startDemo() {
   motionStartTime = millis();
   activeDuration = deployTimeMs;
 
-  setMotor1(1, motorSpeedPwm);
-  Serial.printf("[CLAW] Started Full Demo Sequence\n");
+  // Demo Deploy: Motor 1 pulls, Motor 2 unwinds
+  setMotor1(MOTOR_DIR_PULL, motorSpeedPwm);
+  setMotor2(MOTOR_DIR_RELEASE, unwindSpeedPwm);
+
+  Serial.printf("[CLAW] Started Full Demo Sequence (Deploy phase)\n");
   Hawa.log("[CLAW] Auto Demo sequence initiated");
   Hawa.sendData("state", "DEMO_DEPLOYING");
 }
@@ -184,7 +206,7 @@ void updateStateMachine() {
   switch (currentState) {
     case STATE_DEPLOYING:
       if (elapsed >= activeDuration) {
-        stopMotor1();
+        stopAllMotors();
         currentState = STATE_DEPLOYED;
         activeDuration = 0;
         Serial.println("[CLAW] Deploy cycle finished.");
@@ -195,7 +217,7 @@ void updateStateMachine() {
 
     case STATE_RETRACTING:
       if (elapsed >= activeDuration) {
-        stopMotor2();
+        stopAllMotors();
         currentState = STATE_RETRACTED;
         activeDuration = 0;
         Serial.println("[CLAW] Retract cycle finished.");
@@ -206,7 +228,7 @@ void updateStateMachine() {
 
     case STATE_DEMO_DEPLOYING:
       if (elapsed >= activeDuration) {
-        stopMotor1();
+        stopAllMotors();
         currentState = STATE_DEMO_HOLDING;
         motionStartTime = millis();
         activeDuration = demoHoldMs;
@@ -220,15 +242,17 @@ void updateStateMachine() {
         currentState = STATE_DEMO_RETRACTING;
         motionStartTime = millis();
         activeDuration = retractTimeMs;
-        setMotor2(1, motorSpeedPwm);
-        Serial.println("[CLAW] Demo: Retracting claws...");
+        // Demo Retract: Motor 2 pulls Blue cable, Motor 1 unwinds Red cable
+        setMotor2(MOTOR_DIR_PULL, motorSpeedPwm);
+        setMotor1(MOTOR_DIR_RELEASE, unwindSpeedPwm);
+        Serial.println("[CLAW] Demo: Retracting claws (M2 Pull, M1 Unwind)...");
         Hawa.sendData("state", "DEMO_RETRACTING");
       }
       break;
 
     case STATE_DEMO_RETRACTING:
       if (elapsed >= activeDuration) {
-        stopMotor2();
+        stopAllMotors();
         currentState = STATE_IDLE;
         activeDuration = 0;
         Serial.println("[CLAW] Demo sequence complete. Ready.");
@@ -252,7 +276,9 @@ void updateStateMachine() {
 // ==========================================
 
 void handleRoot() {
-  server.send(200, "text/html", INDEX_HTML);
+  server.sendHeader("Content-Encoding", "gzip");
+  server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  server.send_P(200, "text/html", (PGM_P)INDEX_HTML_GZ, INDEX_HTML_GZ_LEN);
 }
 
 void handleStatus() {
@@ -267,6 +293,7 @@ void handleStatus() {
   json += "\"m1_pwm\":" + String(currentM1Pwm) + ",";
   json += "\"m2_pwm\":" + String(currentM2Pwm) + ",";
   json += "\"target_pwm\":" + String(motorSpeedPwm) + ",";
+  json += "\"unwind_pwm\":" + String(unwindSpeedPwm) + ",";
   json += "\"total_duration\":" + String(activeDuration) + ",";
   json += "\"remaining\":" + String(remaining) + ",";
   // Wi-Fi and Hawa Wireless Status
@@ -309,6 +336,10 @@ void handleStop() {
 void handleConfig() {
   if (server.hasArg("pwm")) {
     motorSpeedPwm = constrain(server.arg("pwm").toInt(), 200, 1023);
+    unwindSpeedPwm = motorSpeedPwm; // Follow main speed by default
+  }
+  if (server.hasArg("unwind_pwm")) {
+    unwindSpeedPwm = constrain(server.arg("unwind_pwm").toInt(), 100, 1023);
   }
   if (server.hasArg("deploy")) {
     deployTimeMs = constrain(server.arg("deploy").toInt(), 500, 15000);
@@ -358,11 +389,16 @@ void handleWifiSave() {
 
   Serial.printf("[WiFi] Provisioning request from Web Page -> SSID: %s\n", ssid.c_str());
 
+  if (serverUrl.length() == 0) {
+    serverUrl = "wss://hawa-platform.onrender.com/ws";
+  }
+
   // Save to persistent storage through Hawa
   Hawa.saveCredentials(ssid, pass, serverUrl, devName);
 
   // Attempt connection in background while keeping AP intact
   WiFi.mode(WIFI_AP_STA);
+  WiFi.disconnect();
   WiFi.begin(ssid.c_str(), pass.c_str());
 
   Hawa.log("[WIFI] New credentials saved from Web Dashboard for SSID: " + ssid);
@@ -424,6 +460,10 @@ void setup() {
   Serial.print("[WiFi] AP IP Address: ");
   Serial.println(apIP);
 
+  // Start Captive Portal DNS Server (resolves all domains to 192.168.4.1)
+  dnsServer.start(DNS_PORT, "*", apIP);
+  Serial.println("[DNS] Captive Portal DNS Server active on port 53");
+
   // Initialize Hawa Universal IoT & OTA Agent
   Hawa.begin();
 
@@ -453,6 +493,12 @@ void setup() {
 
   // Setup Web Routes
   server.on("/", HTTP_GET, handleRoot);
+  server.on("/generate_204", HTTP_GET, handleRoot);        // Android captive portal
+  server.on("/hotspot-detect.html", HTTP_GET, handleRoot); // Apple iOS captive portal
+  server.on("/canonical.html", HTTP_GET, handleRoot);
+  server.on("/connecttest.txt", HTTP_GET, handleRoot);
+  server.on("/ncsi.txt", HTTP_GET, handleRoot);
+
   server.on("/api/status", HTTP_GET, handleStatus);
   server.on("/api/deploy", HTTP_POST, handleDeploy);
   server.on("/api/retract", HTTP_POST, handleRetract);
@@ -466,6 +512,16 @@ void setup() {
   server.on("/api/wifi-clear", HTTP_POST, handleWifiClear);
   server.on("/api/reboot", HTTP_POST, handleReboot);
 
+  // Captive Portal 404 Redirection
+  server.onNotFound([]() {
+    if (server.uri().startsWith("/api/")) {
+      server.send(404, "application/json", "{\"status\":\"not_found\"}");
+    } else {
+      server.sendHeader("Location", String("http://") + WiFi.softAPIP().toString() + "/", true);
+      server.send(302, "text/plain", "");
+    }
+  });
+
   // Setup Web OTA Firmware Update at /update
   httpUpdater.setup(&server, "/update");
 
@@ -474,7 +530,49 @@ void setup() {
   Serial.println("[CLAW] System initialized in IDLE state.");
 }
 
+// ==========================================
+// Serial Command Handler (Web Serial / USB CLI)
+// ==========================================
+void handleSerialCommands() {
+  while (Serial.available() > 0) {
+    char c = Serial.read();
+    if (c == '\n' || c == '\r') {
+      if (serialBuffer.length() > 0) {
+        serialBuffer.trim();
+        serialBuffer.toUpperCase();
+        if (serialBuffer == "DEPLOY") {
+          startDeploy();
+        } else if (serialBuffer == "RETRACT") {
+          startRetract();
+        } else if (serialBuffer == "STOP") {
+          triggerEmergencyStop();
+        } else if (serialBuffer == "DEMO") {
+          startDemo();
+        } else if (serialBuffer.startsWith("SET_PWM=")) {
+          int p = serialBuffer.substring(8).toInt();
+          if (p >= 200 && p <= 1023) {
+            motorSpeedPwm = p;
+            unwindSpeedPwm = p;
+            Serial.printf("[CONFIG] Motor and unwind PWM set to %d\n", p);
+          }
+        }
+        serialBuffer = "";
+      }
+    } else {
+      if (serialBuffer.length() < 64) {
+        serialBuffer += c;
+      }
+    }
+  }
+}
+
 void loop() {
+  // Handle USB / Web Serial commands
+  handleSerialCommands();
+
+  // Handle Captive Portal DNS resolution
+  dnsServer.processNextRequest();
+
   // Handle HTTP client requests
   server.handleClient();
   MDNS.update();
@@ -493,7 +591,7 @@ void loop() {
       lastLedBlink = now;
       digitalWrite(PIN_LED_STATUS, !digitalRead(PIN_LED_STATUS));
     }
-  } else if (currentM1Pwm > 0 || currentM2Pwm > 0) {
+  } else if (abs(currentM1Pwm) > 0 || abs(currentM2Pwm) > 0) {
     // Solid ON when any motor is running (NodeMCU LED is active LOW)
     digitalWrite(PIN_LED_STATUS, LOW);
   } else {
